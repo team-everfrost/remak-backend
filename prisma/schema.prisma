@@ -11,16 +11,19 @@ datasource db {
 }
 
 model User {
-  id         BigInt    @id @default(autoincrement())
-  email      String    @unique
-  password   String?
+  id        BigInt   @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email        String  @unique
+  password     String?
+  refreshToken String?
+
   provider   Provider
   providerId String?
   name       String
-  picture    String?
+  imageUrl   String?
   role       Role      @default(BASIC)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
   articles   Article[]
 }
 
