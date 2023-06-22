@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { SignupDto } from './dto/signup.dto';
@@ -6,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { Tokens } from './types/tokens.type';
+import { AuthDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -86,8 +92,34 @@ export class AuthService {
     return tokens;
   }
 
-  loginLocal() {
-    return 'This action logs in a user';
+  async loginLocal(authDto: AuthDto): Promise<Tokens> {
+    const { email, password } = authDto;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new ForbiddenException('Access denied');
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) throw new ForbiddenException('Access denied');
+
+    const tokens = await this.getTokens(user);
+
+    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        refreshToken: hashedRefreshToken,
+      },
+    });
+
+    this.logger.debug(
+      `user updated: ${JSON.stringify(updatedUser, (key, value) =>
+        typeof value === 'bigint' ? value.toString() + 'n' : value,
+      )}`,
+    );
+
+    return tokens;
   }
 
   logout() {
