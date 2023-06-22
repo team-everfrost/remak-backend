@@ -1,0 +1,53 @@
+#!/bin/bash
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Define the type-emoji mapping
+emojies="Feat=✨
+Fix=🔨
+Style=⭐️
+Refactor=🧠
+File=📁
+Design=🎨
+Comment=🏷
+Chore=🍎
+Docs=📝
+Hotfix=🔥"
+
+COMMIT_MESSAGE_FILE_PATH=$1
+
+first_line=$(head -n1 "$COMMIT_MESSAGE_FILE_PATH")
+if [[ $first_line =~ ^Merge|^Revert|^Amend|^Reset|^Rebase|^Tag ]]; then
+  exit 0
+fi
+
+type=$(echo $first_line | grep -o "^[A-Za-z]*")
+start_case_type=$(echo $type | awk '{print toupper(substr($0,0,1))tolower(substr($0,2))}')
+if [ -z "$type" ]; then
+  echo "Commit type is missing"
+  exit 1
+fi
+
+# Add the appropriate emoji type to the first line of the commit message
+for MAPPING in $emojies; do
+  emoji_key=$(echo $MAPPING | cut -d= -f1)
+  emoji=$(echo $MAPPING | cut -d= -f2)
+  if [ "$start_case_type" = "$emoji_key" ]; then
+    first_line=$(echo $first_line | sed "s/$type/$emoji $start_case_type/")
+    break
+  fi
+done
+
+tail -n +2 $COMMIT_MESSAGE_FILE_PATH > .git/temp
+echo "$first_line" > $COMMIT_MESSAGE_FILE_PATH
+cat .git/temp >> $COMMIT_MESSAGE_FILE_PATH
+
+branch_name=$(git rev-parse --abbrev-ref HEAD)
+issue_number=$(echo "$branch_name" | sed -n 's/issue\([0-9]\{1,\}\)-.*/\1/p')
+
+# if the last line of commit includes #$issue_number, don't add it again
+last_line=$(tail -n1 "$COMMIT_MESSAGE_FILE_PATH")
+if [ `echo $last_line | grep -c "#$issue_number"` -eq 0 ]; then
+  subject=$(cat "$COMMIT_MESSAGE_FILE_PATH" | cut -d':' -f2)
+  echo "" >> "$COMMIT_MESSAGE_FILE_PATH"
+  echo "#$issue_number" >> "$COMMIT_MESSAGE_FILE_PATH"
+fi
