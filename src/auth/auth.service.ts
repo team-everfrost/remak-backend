@@ -73,21 +73,7 @@ export class AuthService {
     );
 
     const tokens = await this.getTokens(user);
-
-    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
-    const updatedUser = await this.prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        refreshToken: hashedRefreshToken,
-      },
-    });
-    this.logger.debug(
-      `user updated: ${JSON.stringify(updatedUser, (key, value) =>
-        typeof value === 'bigint' ? value.toString() + 'n' : value,
-      )}`,
-    );
+    await this.saveRefreshToken(user, tokens.refreshToken);
 
     return tokens;
   }
@@ -102,8 +88,21 @@ export class AuthService {
     if (!isPasswordValid) throw new ForbiddenException('Access denied');
 
     const tokens = await this.getTokens(user);
+    await this.saveRefreshToken(user, tokens.refreshToken);
 
-    const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+    return tokens;
+  }
+
+  logout() {
+    return 'This action logs out a user';
+  }
+
+  refreshTokens() {
+    return "This action refreshes a user's tokens";
+  }
+
+  async saveRefreshToken(user: User, refreshToken: string) {
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
     const updatedUser = await this.prisma.user.update({
       where: {
         id: user.id,
@@ -118,15 +117,5 @@ export class AuthService {
         typeof value === 'bigint' ? value.toString() + 'n' : value,
       )}`,
     );
-
-    return tokens;
-  }
-
-  logout() {
-    return 'This action logs out a user';
-  }
-
-  refreshTokens() {
-    return "This action refreshes a user's tokens";
   }
 }
