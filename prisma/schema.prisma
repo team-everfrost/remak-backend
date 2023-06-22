@@ -15,45 +15,51 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email        String  @unique
-  password     String?
-  refreshToken String?
+  email    String  @unique
+  password String?
 
   provider   Provider
   providerId String?
-  name       String
+  name       String?
   imageUrl   String?
   role       Role      @default(BASIC)
   articles   Article[]
+
+  @@map("users")
 }
 
 model Article {
-  id        BigInt          @id @default(autoincrement())
+  id        BigInt       @id @default(autoincrement())
   title     String
   content   String
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   authorId  BigInt
-  author    User            @relation(fields: [authorId], references: [id])
-  tags      TagsOnArticle[]
+  author    User         @relation(fields: [authorId], references: [id])
+  tags      TagArticle[]
   summary   String?
+
+  @@map("article")
 }
 
 model Tag {
-  id        BigInt          @id @default(autoincrement())
+  id        BigInt       @id @default(autoincrement())
   name      String
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  articles  TagsOnArticle[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  articles  TagArticle[]
+
+  @@map("tag")
 }
 
-model TagsOnArticle {
+model TagArticle {
   articleId BigInt
   tagId     BigInt
   article   Article @relation(fields: [articleId], references: [id])
   tag       Tag     @relation(fields: [tagId], references: [id])
 
   @@id([articleId, tagId])
+  @@map("tag_article")
 }
 
 enum Role {

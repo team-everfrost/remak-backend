@@ -10,7 +10,7 @@ import { SignupDto } from './dto/signup.dto';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
-import { Tokens } from './types/tokens.type';
+import { Token } from './types/token.type';
 import { AuthDto } from './dto/auth.dto';
 
 @Injectable()
@@ -23,33 +23,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async getTokens(user: User): Promise<Tokens> {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          email: user.email,
-          role: user.role,
-        },
-        {
-          secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
-          expiresIn: 60 * 20,
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          email: user.email,
-          role: user.role,
-        },
-        {
-          secret: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
-          expiresIn: 60 * 60 * 24 * 7,
-        },
-      ),
-    ]);
-    return { accessToken, refreshToken };
-  }
-
-  async signupLocal(signupDto: SignupDto): Promise<Tokens> {
+  async signupLocal(signupDto: SignupDto): Promise<Token> {
     const { email, password, name } = signupDto;
 
     if (await this.prisma.user.findUnique({ where: { email } })) {
@@ -72,13 +46,10 @@ export class AuthService {
       )}`,
     );
 
-    const tokens = await this.getTokens(user);
-    await this.saveRefreshToken(user, tokens.refreshToken);
-
-    return tokens;
+    return await this.getToken(user);
   }
 
-  async loginLocal(authDto: AuthDto): Promise<Tokens> {
+  async loginLocal(authDto: AuthDto): Promise<Token> {
     const { email, password } = authDto;
 
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -87,35 +58,31 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new ForbiddenException('Access denied');
 
-    const tokens = await this.getTokens(user);
-    await this.saveRefreshToken(user, tokens.refreshToken);
-
-    return tokens;
+    return await this.getToken(user);
   }
 
   logout() {
+    // TODO: 액세스 토큰 블랙리스트 + 리프레시 토큰 삭제
     return 'This action logs out a user';
   }
 
-  refreshTokens() {
-    return "This action refreshes a user's tokens";
-  }
-
-  async saveRefreshToken(user: User, refreshToken: string) {
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    const updatedUser = await this.prisma.user.update({
-      where: {
-        id: user.id,
+  async getToken(user: User): Promise<Token> {
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.id.toString(), // bigint to string
+        email: user.email,
+        name: user.name,
+        role: user.role,
       },
-      data: {
-        refreshToken: hashedRefreshToken,
+      {
+        secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
+        // TODO: 리프레시 토큰 구현 후 만료 시간 조정
+        expiresIn: 60 * 60 * 12,
       },
-    });
-
-    this.logger.debug(
-      `user updated: ${JSON.stringify(updatedUser, (key, value) =>
-        typeof value === 'bigint' ? value.toString() + 'n' : value,
-      )}`,
     );
+
+    this.logger.debug(`${user.id}'s accessToken: ${accessToken}`);
+
+    return { accessToken };
   }
 }
