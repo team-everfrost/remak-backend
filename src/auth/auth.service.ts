@@ -10,6 +10,7 @@ import { Tokens } from './types/tokens.type';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -41,6 +42,7 @@ export class AuthService {
     ]);
     return { accessToken, refreshToken };
   }
+
   async signupLocal(signupDto: SignupDto): Promise<Tokens> {
     const { email, password, name } = signupDto;
 
@@ -83,6 +85,7 @@ export class AuthService {
 
     return tokens;
   }
+
   loginLocal() {
     return 'This action logs in a user';
   }
@@ -90,6 +93,7 @@ export class AuthService {
   logout() {
     return 'This action logs out a user';
   }
+
   refreshTokens() {
     return "This action refreshes a user's tokens";
   }
