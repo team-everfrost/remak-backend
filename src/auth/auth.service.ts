@@ -70,8 +70,6 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(
       {
         sub: user.id.toString(), // bigint to string
-        email: user.email,
-        name: user.name,
         role: user.role,
       },
       {
