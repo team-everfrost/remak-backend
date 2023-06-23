@@ -62,6 +62,19 @@ model TagArticle {
   @@map("tag_article")
 }
 
+// 나중에 인메모리 DB로 바꿀 것
+model Email {
+  id        BigInt   @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email      String  @unique
+  signupCode String
+  verified   Boolean @default(false)
+
+  @@map("email")
+}
+
 enum Role {
   BASIC
   PLUS

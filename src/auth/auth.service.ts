@@ -8,10 +8,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { SignupDto } from './dto/signup.dto';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { Provider, Role, User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { Token } from './types/token.type';
 import { AuthDto } from './dto/auth.dto';
+import { EmailDto } from './dto/email.dto';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +23,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private mailerService: MailerService,
   ) {}
 
   async signupLocal(signupDto: SignupDto): Promise<Token> {
@@ -36,7 +39,8 @@ export class AuthService {
         email,
         password: hashedPassword,
         name,
-        provider: 'LOCAL',
+        provider: Provider.LOCAL,
+        role: Role.BASIC,
       },
     });
 
@@ -64,6 +68,45 @@ export class AuthService {
   logout() {
     // TODO: 액세스 토큰 블랙리스트 + 리프레시 토큰 삭제
     return 'This action logs out a user';
+  }
+
+  async sendSignupCode(emailDto: EmailDto) {
+    const { email } = emailDto;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (user) throw new ConflictException('email already exists');
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: '회원가입 코드',
+      html: '<b>회원가입 코드</b>',
+    });
+
+    await this.prisma.email.upsert({
+      where: { email },
+      update: { signupCode: '123456' },
+      create: {
+        email,
+        signupCode: '123456',
+      },
+    });
+  }
+
+  async verifySignupCode(emailDto: EmailDto) {
+    const { email, signupCode } = emailDto;
+
+    const emailData = await this.prisma.email.findUnique({
+      where: { email },
+    });
+
+    if (!emailData) throw new ForbiddenException('Access denied');
+    if (emailData.signupCode !== signupCode)
+      throw new ForbiddenException('Access denied');
+
+    await this.prisma.email.update({
+      where: { email },
+      data: { signupCode: '', verified: true },
+    });
   }
 
   async getToken(user: User): Promise<Token> {

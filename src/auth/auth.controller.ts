@@ -11,6 +11,7 @@ import { SignupDto } from './dto/signup.dto';
 import { Token } from './types/token.type';
 import { AuthDto } from './dto/auth.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { EmailDto } from './dto/email.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -33,5 +34,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   logout() {
     return this.authService.logout();
+  }
+
+  @Post('/signup-code')
+  sendSignupCode(@Body() emailDto: EmailDto) {
+    return this.authService.sendSignupCode(emailDto);
+  }
+
+  @Post('/verify-code')
+  verifySignupCode(@Body() emailDto: EmailDto) {
+    return this.authService.verifySignupCode(emailDto);
   }
 }
