@@ -77,7 +77,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) throw new ConflictException('email already exists');
 
-    const signupCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const signupCode = this.getSignupCode(3);
     this.logger.debug(`signupCode: ${signupCode}`);
 
     await this.mailerService.sendMail({
@@ -133,7 +133,7 @@ export class AuthService {
     return { accessToken };
   }
 
-  async getSignupCode(length: number) {
+  getSignupCode(length: number) {
     return crypto.randomBytes(length).toString('hex');
   }
 }
