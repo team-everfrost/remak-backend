@@ -14,6 +14,7 @@ import { Token } from './types/token.type';
 import { AuthDto } from './dto/auth.dto';
 import { EmailDto } from './dto/email.dto';
 import { MailerService } from '@nestjs-modules/mailer';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -76,18 +77,21 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) throw new ConflictException('email already exists');
 
+    const signupCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    this.logger.debug(`signupCode: ${signupCode}`);
+
     await this.mailerService.sendMail({
       to: email,
-      subject: '회원가입 코드',
-      html: '<b>회원가입 코드</b>',
+      subject: 'Remak 회원가입 코드',
+      html: `<b>회원가입 코드는 ${signupCode} 입니다</b>`,
     });
 
     await this.prisma.email.upsert({
       where: { email },
-      update: { signupCode: '123456' },
+      update: { signupCode },
       create: {
         email,
-        signupCode: '123456',
+        signupCode,
       },
     });
   }
@@ -103,6 +107,8 @@ export class AuthService {
     if (emailData.signupCode !== signupCode)
       throw new ForbiddenException('Access denied');
 
+    // 인증 성공. 이후 signupLocal() 호출
+    this.logger.debug(`signupCode verified: ${email}`);
     await this.prisma.email.update({
       where: { email },
       data: { signupCode: '', verified: true },
@@ -125,5 +131,9 @@ export class AuthService {
     this.logger.debug(`${user.id}'s accessToken: ${accessToken}`);
 
     return { accessToken };
+  }
+
+  async getSignupCode(length: number) {
+    return crypto.randomBytes(length).toString('hex');
   }
 }
