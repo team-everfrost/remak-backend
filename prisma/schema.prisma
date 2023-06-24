@@ -11,30 +11,29 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id       BigInt  @id @default(autoincrement())
+  email    String  @unique
+  password String?
+  name     String?
+  imageUrl String?
+  role     Role    @default(BASIC)
+  uid      String  @default(cuid())
+
+  documents Document[]
+  socials   Social[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  email    String   @unique
-  password String?
-  socials  Social[]
-
-  name      String?
-  imageUrl  String?
-  role      Role       @default(BASIC)
-  documents Document[]
-  uid       String     @default(cuid()) // for jwt
 
   @@map("users")
 }
 
 model Social {
-  id String @id @default(cuid())
-
+  id         BigInt @id @default(autoincrement())
   providerId String
   provider   String
 
-  userId String
+  userId BigInt
   user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
@@ -44,7 +43,7 @@ model Social {
 }
 
 model Document {
-  id      String       @id @default(cuid())
+  id      BigInt       @id @default(autoincrement())
   title   String?
   type    DocumentType
   url     String?
@@ -52,7 +51,7 @@ model Document {
   summary String?
   status  Status       @default(PENDING)
 
-  authorId String
+  authorId BigInt
   author   User          @relation(fields: [authorId], references: [id])
   tags     TagDocument[]
 
@@ -63,8 +62,9 @@ model Document {
 }
 
 model Tag {
-  id       String        @id @default(cuid())
-  name     String
+  id   BigInt @id @default(autoincrement())
+  name String
+
   articles TagDocument[]
 
   createdAt DateTime @default(now())
@@ -74,8 +74,8 @@ model Tag {
 }
 
 model TagDocument {
-  articleId String
-  tagId     String
+  articleId BigInt
+  tagId     BigInt
   article   Document @relation(fields: [articleId], references: [id])
   tag       Tag      @relation(fields: [tagId], references: [id])
 
@@ -85,13 +85,13 @@ model TagDocument {
 
 // 나중에 인메모리 DB로 바꿀 것
 model Email {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id         BigInt  @id @default(autoincrement())
   email      String  @unique
   signupCode String
   verified   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("email")
 }
