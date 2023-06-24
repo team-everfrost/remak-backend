@@ -44,11 +44,7 @@ export class AuthService {
       },
     });
 
-    this.logger.debug(
-      `user created: ${JSON.stringify(user, (key, value) =>
-        typeof value === 'bigint' ? value.toString() + 'n' : value,
-      )}`,
-    );
+    this.logger.debug(`user created: ${JSON.stringify(user)}`);
 
     return await this.getToken(user);
   }
