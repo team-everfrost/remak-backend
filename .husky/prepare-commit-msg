@@ -3,15 +3,17 @@
 
 # Define the type-emoji mapping
 emojies="Feat=✨
+Update=⚡️
+Break=‼️
 Fix=🔨
-Style=⭐️
-Refactor=🧠
+Style=🌈
+Refactor=🌀
 File=📁
 Design=🎨
-Comment=🏷
+Comment=🔖
 Chore=🍎
 Docs=📝
-Hotfix=🔥"
+Test=🧪"
 
 COMMIT_MESSAGE_FILE_PATH=$1
 
