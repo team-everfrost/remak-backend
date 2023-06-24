@@ -11,52 +11,73 @@ datasource db {
 }
 
 model User {
-  id        BigInt   @id @default(autoincrement())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email    String  @unique
+  email    String   @unique
   password String?
+  socials  Social[]
 
-  provider   Provider
-  providerId String?
-  name       String?
-  imageUrl   String?
-  role       Role      @default(BASIC)
-  articles   Article[]
+  name      String?
+  imageUrl  String?
+  role      Role       @default(BASIC)
+  documents Document[]
+  uid       String     @default(cuid()) // for jwt
 
   @@map("users")
 }
 
-model Article {
-  id        BigInt       @id @default(autoincrement())
-  title     String
-  content   String
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  authorId  BigInt
-  author    User         @relation(fields: [authorId], references: [id])
-  tags      TagArticle[]
-  summary   String?
+model Social {
+  id String @id @default(cuid())
+
+  providerId String
+  provider   String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("social")
+}
+
+model Document {
+  id      String       @id @default(cuid())
+  title   String?
+  type    DocumentType
+  url     String?
+  content String?
+  summary String?
+  status  Status       @default(PENDING)
+
+  authorId String
+  author   User          @relation(fields: [authorId], references: [id])
+  tags     TagDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("article")
 }
 
 model Tag {
-  id        BigInt       @id @default(autoincrement())
-  name      String
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  articles  TagArticle[]
+  id       String        @id @default(cuid())
+  name     String
+  articles TagDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("tag")
 }
 
-model TagArticle {
-  articleId BigInt
-  tagId     BigInt
-  article   Article @relation(fields: [articleId], references: [id])
-  tag       Tag     @relation(fields: [tagId], references: [id])
+model TagDocument {
+  articleId String
+  tagId     String
+  article   Document @relation(fields: [articleId], references: [id])
+  tag       Tag      @relation(fields: [tagId], references: [id])
 
   @@id([articleId, tagId])
   @@map("tag_article")
@@ -64,7 +85,7 @@ model TagArticle {
 
 // 나중에 인메모리 DB로 바꿀 것
 model Email {
-  id        BigInt   @id @default(autoincrement())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -81,9 +102,16 @@ enum Role {
   ADMIN
 }
 
-enum Provider {
-  LOCAL
-  GOOGLE
-  KAKAO
-  APPLE
+enum DocumentType {
+  WEB
+  MEMO
+  IMAGE
+  FILE
+}
+
+enum Status {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
 }
