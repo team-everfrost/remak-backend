@@ -117,7 +117,7 @@ export class AuthService {
   async getToken(user: User): Promise<Token> {
     const accessToken = await this.jwtService.signAsync(
       {
-        sub: user.id.toString(), // bigint to string
+        aud: user.uid,
         role: user.role,
       },
       {
