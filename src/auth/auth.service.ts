@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { SignupDto } from './dto/signup.dto';
 import { JwtService } from '@nestjs/jwt';
-import { Provider, Role, User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { Token } from './types/token.type';
 import { AuthDto } from './dto/auth.dto';
@@ -40,7 +40,6 @@ export class AuthService {
         email,
         password: hashedPassword,
         name,
-        provider: Provider.LOCAL,
         role: Role.BASIC,
       },
     });
