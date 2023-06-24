@@ -36,7 +36,7 @@ const Configuration = {
         '✨ Feat',
         '⚡️ Update',
         '🔨 Fix',
-        '‼️Break',
+        '💥 Break',
         '🌈 Style',
         '🌀 Refactor',
         '📁 File',
