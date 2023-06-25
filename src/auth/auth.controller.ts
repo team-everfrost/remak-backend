@@ -12,6 +12,7 @@ import { Token } from './types/token.type';
 import { AuthDto } from './dto/auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { EmailDto } from './dto/email.dto';
+import { VerifyCodeDto } from './dto/verify-code.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -42,7 +43,7 @@ export class AuthController {
   }
 
   @Post('/verify-code')
-  verifySignupCode(@Body() emailDto: EmailDto) {
-    return this.authService.verifySignupCode(emailDto);
+  verifySignupCode(@Body() verifyCodeDto: VerifyCodeDto) {
+    return this.authService.verifySignupCode(verifyCodeDto);
   }
 }

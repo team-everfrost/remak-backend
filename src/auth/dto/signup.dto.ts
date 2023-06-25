@@ -11,7 +11,4 @@ export class SignupDto {
     message: 'password too weak',
   })
   password: string;
-
-  @IsString()
-  name: string;
 }

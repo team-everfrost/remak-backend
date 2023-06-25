@@ -15,6 +15,7 @@ import { AuthDto } from './dto/auth.dto';
 import { EmailDto } from './dto/email.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import * as crypto from 'crypto';
+import { VerifyCodeDto } from './dto/verify-code.dto';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +29,7 @@ export class AuthService {
   ) {}
 
   async signupLocal(signupDto: SignupDto): Promise<Token> {
-    const { email, password, name } = signupDto;
+    const { email, password } = signupDto;
 
     if (await this.prisma.user.findUnique({ where: { email } })) {
       throw new ConflictException('email already exists');
@@ -39,7 +40,6 @@ export class AuthService {
       data: {
         email,
         password: hashedPassword,
-        name,
         role: Role.BASIC,
       },
     });
@@ -91,8 +91,8 @@ export class AuthService {
     });
   }
 
-  async verifySignupCode(emailDto: EmailDto) {
-    const { email, signupCode } = emailDto;
+  async verifySignupCode(verifyCodeDto: VerifyCodeDto) {
+    const { email, signupCode } = verifyCodeDto;
 
     const emailData = await this.prisma.email.findUnique({
       where: { email },
