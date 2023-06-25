@@ -128,7 +128,8 @@ export class AuthService {
     return { accessToken };
   }
 
-  getSignupCode(length: number) {
-    return crypto.randomBytes(length).toString('hex');
+  getSignupCode(bytes: number) {
+    // bytes * 2 길이의 랜덤 문자열 생성
+    return crypto.randomBytes(bytes).toString('hex');
   }
 }
