@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { DocumentModule } from './document/document.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         },
       }),
     }),
+    DocumentModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
