@@ -6,13 +6,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { SignupDto } from './dto/signup.dto';
-import { Token } from './types/token.type';
-import { AuthDto } from './dto/auth.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from './auth.service';
+import { AuthDto } from './dto/auth.dto';
 import { EmailDto } from './dto/email.dto';
+import { SignupDto } from './dto/signup.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
+import { Token } from './types/token.type';
 
 @Controller('auth')
 export class AuthController {

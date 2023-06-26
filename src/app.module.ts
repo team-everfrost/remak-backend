@@ -1,12 +1,12 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaService } from './prisma/prisma.service';
-import { PrismaModule } from './prisma/prisma.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { DocumentModule } from './document/document.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { PrismaService } from './prisma/prisma.service';
 
 @Module({
   imports: [

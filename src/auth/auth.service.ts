@@ -1,21 +1,21 @@
+import { MailerService } from '@nestjs-modules/mailer';
 import {
   ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
-import { SignupDto } from './dto/signup.dto';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Role, User } from '@prisma/client';
-import { ConfigService } from '@nestjs/config';
-import { Token } from './types/token.type';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/auth.dto';
 import { EmailDto } from './dto/email.dto';
-import { MailerService } from '@nestjs-modules/mailer';
-import * as crypto from 'crypto';
+import { SignupDto } from './dto/signup.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
+import { Token } from './types/token.type';
 
 @Injectable()
 export class AuthService {

@@ -10,12 +10,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { DocumentService } from './document.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth } from '@nestjs/swagger';
-import { JwtService } from '@nestjs/jwt';
 
 @Controller('document')
 @UseGuards(AuthGuard('jwt'))
