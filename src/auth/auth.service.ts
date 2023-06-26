@@ -14,8 +14,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/auth.dto';
 import { EmailDto } from './dto/email.dto';
 import { SignupDto } from './dto/signup.dto';
+import { Token } from './dto/token.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
-import { Token } from './types/token.type';
 
 @Injectable()
 export class AuthService {
