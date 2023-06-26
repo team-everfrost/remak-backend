@@ -13,6 +13,7 @@ async function bootstrap() {
     .setTitle('Remak')
     .setDescription('Remak API description')
     .setVersion('0.1')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
