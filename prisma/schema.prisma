@@ -17,7 +17,7 @@ model User {
   name     String?
   imageUrl String?
   role     Role    @default(BASIC)
-  uid      String  @default(cuid())
+  uid      String  @unique @default(cuid())
 
   documents Document[]
   socials   Social[]
