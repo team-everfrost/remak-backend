@@ -51,9 +51,9 @@ model Document {
   summary String?
   status  Status       @default(PENDING)
 
-  authorId BigInt
-  author   User          @relation(fields: [authorId], references: [id])
-  tags     TagDocument[]
+  userId BigInt
+  user   User          @relation(fields: [userId], references: [id])
+  tags   TagDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -103,7 +103,7 @@ enum Role {
 }
 
 enum DocumentType {
-  WEB
+  WEBPAGE
   MEMO
   IMAGE
   FILE
