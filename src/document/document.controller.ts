@@ -5,17 +5,18 @@ import {
   Get,
   Logger,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
+import { GetRole } from '../decorators/GetRole';
+import { GetUid } from '../decorators/GetUid';
 import { DocumentService } from './document.service';
-import { CreateDocumentDto } from './dto/create-document.dto';
-import { UpdateDocumentDto } from './dto/update-document.dto';
+import { CreateMemoDto } from './dto/create-memo.dto';
 
 @Controller('document')
 @UseGuards(AuthGuard('jwt'))
@@ -23,21 +24,17 @@ import { UpdateDocumentDto } from './dto/update-document.dto';
 export class DocumentController {
   private readonly logger: Logger = new Logger(DocumentController.name);
 
-  constructor(
-    private readonly documentService: DocumentService,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly documentService: DocumentService) {}
 
-  @Post()
-  create(@Body() createDocumentDto: CreateDocumentDto) {
-    return this.documentService.create(createDocumentDto);
+  @Post('memo/create')
+  createMemo(@GetUid() uid: string, @Body() createMemoDto: CreateMemoDto) {
+    this.logger.debug(`uid: ${uid}`);
+    return this.documentService.createMemo(uid, createMemoDto);
   }
 
   @Get()
-  findAll(@Req() req: any) {
-    const payload = req.user;
-    const uid = payload.aud;
-    this.logger.debug(`uid: ${uid}`);
+  findAll(@GetUid() uid: string, @GetRole() role: Role) {
+    this.logger.debug(`uid: ${uid}, role: ${role}`);
     return this.documentService.findAll(uid);
   }
 
@@ -46,12 +43,12 @@ export class DocumentController {
     return this.documentService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateDocumentDto: UpdateDocumentDto,
+  @Patch('memo/:id')
+  updateMemo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateMemoDto: CreateMemoDto,
   ) {
-    return this.documentService.update(+id, updateDocumentDto);
+    return this.documentService.updateMemo(id, updateMemoDto);
   }
 
   @Delete(':id')
