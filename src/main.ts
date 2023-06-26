@@ -9,15 +9,17 @@ async function bootstrap() {
   };
   const app = await NestFactory.create(AppModule);
 
-  const config = new DocumentBuilder()
-    .setTitle('Remak')
-    .setDescription('Remak API description')
-    .setVersion('0.1')
-    .addBearerAuth()
-    .build();
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Remak')
+      .setDescription('Remak API description')
+      .setVersion('0.1')
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
 
   app.useGlobalPipes(new ValidationPipe());
   await app.listen(3000);
