@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateWebpageDto {
   @IsNotEmpty()
@@ -6,7 +6,7 @@ export class CreateWebpageDto {
   title: string;
 
   @IsNotEmpty()
-  @IsUrl()
+  @IsString()
   url: string;
 
   @IsNotEmpty()

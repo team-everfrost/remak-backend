@@ -55,4 +55,10 @@ export class DocumentDto {
     example: '2021-08-01T00:00:00.000Z',
   })
   updatedAt: Date;
+
+  @ApiProperty({
+    description: 'Document Tags',
+    example: ['tag1', 'tag2'],
+  })
+  tags: string[];
 }
