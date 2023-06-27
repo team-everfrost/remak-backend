@@ -8,11 +8,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { AuthDto } from './dto/auth.dto';
-import { EmailDto } from './dto/email.dto';
-import { SignupDto } from './dto/signup.dto';
-import { Token } from './dto/token.dto';
-import { VerifyCodeDto } from './dto/verify-code.dto';
+import { AuthDto } from './dto/request/auth.dto';
+import { EmailDto } from './dto/request/email.dto';
+import { SignupDto } from './dto/request/signup.dto';
+import { VerifyCodeDto } from './dto/request/verify-code.dto';
+import { Token } from './dto/response/token.dto';
 
 @Controller('auth')
 export class AuthController {

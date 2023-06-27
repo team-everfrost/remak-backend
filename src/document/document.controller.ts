@@ -16,7 +16,7 @@ import { Role } from '@prisma/client';
 import { GetRole } from '../decorators/GetRole';
 import { GetUid } from '../decorators/GetUid';
 import { DocumentService } from './document.service';
-import { CreateMemoDto } from './dto/create-memo.dto';
+import { CreateMemoDto } from './dto/request/create-memo.dto';
 
 @Controller('document')
 @UseGuards(AuthGuard('jwt'))

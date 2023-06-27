@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DocumentType, Status } from '@prisma/client';
 
-export class DocumentResponseDto {
+export class DocumentDto {
   @ApiProperty({
     description: 'Document ID',
     example: 1,
