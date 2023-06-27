@@ -13,8 +13,8 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { GetRole } from '../decorators/GetRole';
-import { GetUid } from '../decorators/GetUid';
+import { GetRole } from '../decorators/get-role.decorator';
+import { GetUid } from '../decorators/get-uid.decorator';
 import { DocumentService } from './document.service';
 import { CreateMemoDto } from './dto/request/create-memo.dto';
 
