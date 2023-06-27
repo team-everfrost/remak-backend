@@ -12,12 +12,12 @@ datasource db {
 
 model User {
   id       BigInt  @id @default(autoincrement())
+  uid      String  @unique @default(uuid()) // 외부 공개용
   email    String  @unique
   password String?
   name     String?
   imageUrl String?
   role     Role    @default(BASIC)
-  uid      String  @unique @default(cuid())
 
   documents Document[]
   socials   Social[]
@@ -44,6 +44,7 @@ model Social {
 
 model Document {
   id      BigInt       @id @default(autoincrement())
+  docId   String       @unique() @default(uuid()) // 외부 공개용
   title   String?
   type    DocumentType
   url     String?
