@@ -3,10 +3,10 @@ import { DocumentType, Status } from '@prisma/client';
 
 export class DocumentDto {
   @ApiProperty({
-    description: 'Document ID',
-    example: 1,
+    description: 'Document UUID',
+    example: 'f7a3d8e0-9a9b-4c4b-9b9b-9b9b9b9b9b9b',
   })
-  id: number;
+  docId: string;
 
   @ApiProperty({
     description: 'Document Title',
