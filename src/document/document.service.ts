@@ -1,42 +1,79 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { DocumentType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMemoDto } from './dto/request/create-memo.dto';
+import { DocumentDto } from './dto/response/document.dto';
 
 @Injectable()
 export class DocumentService {
   constructor(private prisma: PrismaService) {}
 
-  // create(createDocumentDto: CreateDocumentDto) {
-  //   return 'This action adds a new document';
-  // }
-
-  async findAll(uid: string) {
-    return this.prisma.document.findMany({
+  async findAll(uid: string): Promise<DocumentDto[]> {
+    const documents = await this.prisma.document.findMany({
       where: {
         user: {
           uid,
         },
       },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+
+    return documents.map((document) => {
+      const tags = document.tags.map((tagDocument) => tagDocument.tag.name);
+      return new DocumentDto(document, tags);
     });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} document`;
+  async findOne(uid: string, docId: string) {
+    const document = await this.prisma.document.findUnique({
+      where: {
+        docId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    if (document.user.uid !== uid) {
+      throw new UnauthorizedException('User not authorized');
+    }
+
+    return document;
   }
 
-  // update(id: number, updateDocumentDto: UpdateDocumentDto) {
-  //   return `This action updates a #${id} document`;
-  // }
+  async createMemo(uid: string, createMemoDto: CreateMemoDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        uid,
+      },
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} document`;
-  }
+    const document = await this.prisma.document.create({
+      data: {
+        ...createMemoDto,
+        type: DocumentType.MEMO,
+        user: {
+          connect: {
+            id: user.id,
+          },
+        },
+      },
+    });
 
-  createMemo(uid: string, createMemoDto: CreateMemoDto) {
-    return `This action adds a new memo ${createMemoDto} for user ${uid}`;
-  }
-
-  updateMemo(id: number, updateMemoDto: CreateMemoDto) {
-    return `This action updates a memo ${updateMemoDto} #${id}`;
+    return new DocumentDto(document, []);
   }
 }

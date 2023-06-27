@@ -1,19 +1,14 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Logger,
   Param,
-  ParseIntPipe,
-  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
-import { GetRole } from '../decorators/get-role.decorator';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { DocumentService } from './document.service';
 import { CreateMemoDto } from './dto/request/create-memo.dto';
@@ -33,26 +28,12 @@ export class DocumentController {
   }
 
   @Get()
-  findAll(@GetUid() uid: string, @GetRole() role: Role) {
-    this.logger.debug(`uid: ${uid}, role: ${role}`);
+  findAll(@GetUid() uid: string) {
     return this.documentService.findAll(uid);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.documentService.findOne(+id);
-  }
-
-  @Patch('memo/:id')
-  updateMemo(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateMemoDto: CreateMemoDto,
-  ) {
-    return this.documentService.updateMemo(id, updateMemoDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.documentService.remove(+id);
+  @Get(':docId')
+  findOne(@GetUid() uid: string, @Param('docId') docId: string) {
+    return this.documentService.findOne(uid, docId);
   }
 }
