@@ -53,8 +53,8 @@ model Document {
   status  Status       @default(PENDING)
 
   userId BigInt
-  user   User          @relation(fields: [userId], references: [id])
-  tags   TagDocument[]
+  user   User   @relation(fields: [userId], references: [id])
+  tags   Tag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -66,22 +66,12 @@ model Tag {
   id   BigInt @id @default(autoincrement())
   name String
 
-  documents TagDocument[]
+  documents Document[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("tag")
-}
-
-model TagDocument {
-  documentId BigInt
-  tagId      BigInt
-  document   Document @relation(fields: [documentId], references: [id])
-  tag        Tag      @relation(fields: [tagId], references: [id])
-
-  @@id([documentId, tagId])
-  @@map("tag_document")
 }
 
 // 나중에 인메모리 DB로 바꿀 것
