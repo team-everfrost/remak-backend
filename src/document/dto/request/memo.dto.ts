@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateMemoDto {
+export class MemoDto {
   @IsNotEmpty()
   @IsString()
   content: string;

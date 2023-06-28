@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateWebpageDto {
+export class WebpageDto {
   @IsNotEmpty()
   @IsString()
   title: string;

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Document, DocumentType, Status } from '@prisma/client';
+import { Document, DocumentType, Status, Tag } from '@prisma/client';
 
 export class DocumentDto {
   @ApiProperty({
@@ -62,7 +62,7 @@ export class DocumentDto {
   })
   tags: string[];
 
-  constructor(document: Document, tags: string[]) {
+  constructor(document: Document & { tags: Tag[] }) {
     this.docId = document.docId;
     this.title = document.title;
     this.type = document.type;
@@ -72,6 +72,6 @@ export class DocumentDto {
     this.status = document.status;
     this.createdAt = document.createdAt;
     this.updatedAt = document.updatedAt;
-    this.tags = tags;
+    this.tags = document.tags.map((tag) => tag.name);
   }
 }
