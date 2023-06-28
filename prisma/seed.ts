@@ -21,6 +21,14 @@ async function main() {
     // add more users as needed
   ];
 
+  // Create users
+  const createdUsers = await prisma.user.createMany({
+    data: users,
+    skipDuplicates: true, // skips records if already exist
+  });
+
+  const foundUsers = await prisma.user.findMany();
+
   const documents = [
     {
       title: 'Document 1',
@@ -29,7 +37,7 @@ async function main() {
       content: 'This is Document 1',
       summary: 'Document 1 summary',
       status: Status.APPROVED,
-      userId: 1, // assuming this document belongs to the first user
+      userId: foundUsers[0].id, // assuming this document belongs to the first user
     },
     {
       title: 'Document 2',
@@ -38,16 +46,10 @@ async function main() {
       content: 'This is Document 2',
       summary: 'Document 2 summary',
       status: Status.PENDING,
-      userId: 2, // assuming this document belongs to the second user
+      userId: foundUsers[1].id, // assuming this document belongs to the second user
     },
     // add more documents as needed
   ];
-
-  // Create users
-  const createdUsers = await prisma.user.createMany({
-    data: users,
-    skipDuplicates: true, // skips records if already exist
-  });
 
   // Create documents
   const createdDocuments = await prisma.document.createMany({
