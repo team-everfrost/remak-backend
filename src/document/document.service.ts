@@ -33,6 +33,44 @@ export class DocumentService {
     return documents.map((document) => new DocumentDto(document));
   }
 
+  async findByCursor(uid: string, cursor: Date, docId: string, take = 10) {
+    // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
+
+    const documents = await this.prisma.document.findMany({
+      where: {
+        user: {
+          uid,
+        },
+        // updatedAt > cursor OR (updatedAt = cursor AND docId > docId)
+        // updatedAt 인덱스 타게?
+        OR: [
+          {
+            updatedAt: {
+              lt: cursor,
+            },
+          },
+          {
+            updatedAt: cursor,
+            docId: {
+              lt: docId,
+            },
+          },
+        ],
+      },
+      include: {
+        tags: true,
+      },
+      orderBy: [
+        {
+          updatedAt: 'desc',
+        },
+      ],
+      take,
+    });
+    this.logger.debug(documents);
+    return documents.map((document) => new DocumentDto(document));
+  }
+
   async findOne(uid: string, docId: string) {
     const document = await this.getDocument(uid, docId);
 

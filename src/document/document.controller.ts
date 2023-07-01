@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -52,9 +53,22 @@ export class DocumentController {
     return this.documentService.updateWebpage(uid, docId, webpageDto);
   }
 
+  // @Get()
+  // findAll(@GetUid() uid: string) {
+  //   return this.documentService.findAll(uid);
+  // }
+
   @Get()
-  findAll(@GetUid() uid: string) {
-    return this.documentService.findAll(uid);
+  findAllWithCursor(
+    @GetUid() uid: string,
+    @Query('cursor') cursor?: Date,
+    @Query('doc-id') docId?: string,
+  ) {
+    this.logger.debug(cursor);
+    this.logger.debug(docId);
+    cursor = cursor ? cursor : new Date();
+    docId = docId ? docId : 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+    return this.documentService.findByCursor(uid, cursor, docId, 10);
   }
 
   @Get(':docId')
