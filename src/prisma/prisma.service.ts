@@ -14,6 +14,7 @@ export class PrismaService
           url: configService.get<string>('DATABASE_URL'),
         },
       },
+      log: ['query', 'info', 'warn', 'error'],
     });
   }
 
