@@ -41,7 +41,7 @@ export class DocumentService {
         user: {
           uid,
         },
-        // updatedAt > cursor OR (updatedAt = cursor AND docId > docId)
+        // updatedAt < cursor OR (updatedAt = cursor AND document.docId < docId)
         // updatedAt 인덱스 타게?
         OR: [
           {
