@@ -16,35 +16,35 @@ model User {
   email    String  @unique
   password String?
   name     String?
-  imageUrl String?
+  imageUrl String? @map("image_url")
   role     Role    @default(BASIC)
 
   documents Document[]
   socials   Social[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("users")
 }
 
 model Social {
   id         BigInt @id @default(autoincrement())
-  providerId String
+  providerId String @map("provider_id")
   provider   String
 
-  userId BigInt
+  userId BigInt @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("social")
 }
 
 model Document {
   id      BigInt       @id @default(autoincrement())
-  docId   String       @unique() @default(uuid()) // 외부 공개용
+  docId   String       @unique() @default(uuid()) @map("doc_id") // 외부 공개용
   title   String?
   type    DocumentType
   url     String?
@@ -52,12 +52,12 @@ model Document {
   summary String?
   status  Status       @default(PENDING)
 
-  userId BigInt
+  userId BigInt @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
   tags   Tag[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") // index?
 
   @@map("document")
 }
@@ -68,8 +68,8 @@ model Tag {
 
   documents Document[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("tag")
 }
@@ -78,11 +78,11 @@ model Tag {
 model Email {
   id         BigInt  @id @default(autoincrement())
   email      String  @unique
-  signupCode String
+  signupCode String  @map("signup_code")
   verified   Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("email")
 }
