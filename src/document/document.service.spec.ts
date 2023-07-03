@@ -86,4 +86,97 @@ describe('DocumentService', () => {
       );
     });
   });
+
+  describe('createMemo', () => {
+    it('should throw NotFoundException if user not found', async () => {
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
+      await expect(
+        service.createMemo(uid, {
+          content: 'test content',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateMemo', () => {
+    it('should throw NotFoundException if document not found', async () => {
+      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(null);
+      await expect(
+        service.updateMemo(uid, docId, {
+          content: 'test content',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw UnauthorizedException if user not match', async () => {
+      const uid = 'different-uid';
+
+      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(mockDocument);
+
+      await expect(
+        service.updateMemo(uid, docId, {
+          content: 'test content',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('createWebpage', () => {
+    it('should throw NotFoundException if user not found', async () => {
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
+      await expect(
+        service.createWebpage(uid, {
+          title: 'test title',
+          url: 'test url',
+          content: 'test content',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateWebpage', () => {
+    it('should throw NotFoundException if document not found', async () => {
+      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(null);
+      await expect(
+        service.updateWebpage(uid, docId, {
+          title: 'test title',
+          url: 'test url',
+          content: 'test content',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw UnauthorizedException if user not match', async () => {
+      const uid = 'different-uid';
+
+      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(mockDocument);
+
+      await expect(
+        service.updateWebpage(uid, docId, {
+          title: 'test title',
+          url: 'test url',
+          content: 'test content',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('deleteOne', () => {
+    it('should throw NotFoundException if document not found', async () => {
+      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(null);
+      await expect(service.deleteOne(uid, docId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw UnauthorizedException if user not match', async () => {
+      const uid = 'different-uid';
+
+      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(mockDocument);
+
+      await expect(service.deleteOne(uid, docId)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
 });
