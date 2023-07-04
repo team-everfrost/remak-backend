@@ -16,23 +16,6 @@ export class DocumentService {
 
   constructor(private prisma: PrismaService) {}
 
-  async findAll(uid: string): Promise<DocumentDto[]> {
-    const documents = await this.prisma.document.findMany({
-      where: {
-        user: {
-          uid,
-        },
-      },
-      include: {
-        tags: true,
-      },
-    });
-
-    this.logger.debug(documents);
-
-    return documents.map((document) => new DocumentDto(document));
-  }
-
   async findByCursor(uid: string, cursor: Date, docId: string, take = 10) {
     // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
 
@@ -72,7 +55,23 @@ export class DocumentService {
   }
 
   async findOne(uid: string, docId: string) {
-    const document = await this.getDocument(uid, docId);
+    const document = await this.prisma.document.findUnique({
+      where: {
+        docId,
+      },
+      include: {
+        tags: true,
+        user: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Document with docId ${docId} not found`);
+    }
+
+    if (document.user.uid !== uid) {
+      throw new UnauthorizedException(`Unauthorized`);
+    }
 
     return new DocumentDto(document);
   }
@@ -83,6 +82,10 @@ export class DocumentService {
         uid,
       },
     });
+
+    if (!user) {
+      throw new NotFoundException(`User with uid ${uid} not found`);
+    }
 
     const document = await this.prisma.document.create({
       data: {
@@ -103,7 +106,23 @@ export class DocumentService {
   }
 
   async updateMemo(uid: string, docId: string, memoDto: MemoDto) {
-    const document = await this.getDocument(uid, docId);
+    const document = await this.prisma.document.findUnique({
+      where: {
+        docId,
+      },
+      include: {
+        tags: true,
+        user: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Document with docId ${docId} not found`);
+    }
+
+    if (document.user.uid !== uid) {
+      throw new UnauthorizedException(`Unauthorized`);
+    }
 
     const updatedDocument = await this.prisma.document.update({
       where: {
@@ -127,6 +146,10 @@ export class DocumentService {
       },
     });
 
+    if (!user) {
+      throw new NotFoundException(`User with uid ${uid} not found`);
+    }
+
     const document = await this.prisma.document.create({
       data: {
         ...webPageDto,
@@ -146,7 +169,23 @@ export class DocumentService {
   }
 
   async updateWebpage(uid: string, docId: string, webPageDto: WebpageDto) {
-    const document = await this.getDocument(uid, docId);
+    const document = await this.prisma.document.findUnique({
+      where: {
+        docId,
+      },
+      include: {
+        tags: true,
+        user: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Document with docId ${docId} not found`);
+    }
+
+    if (document.user.uid !== uid) {
+      throw new UnauthorizedException(`Unauthorized`);
+    }
 
     const updatedDocument = await this.prisma.document.update({
       where: {
@@ -164,34 +203,28 @@ export class DocumentService {
   }
 
   async deleteOne(uid: string, docId: string) {
-    const document = await this.getDocument(uid, docId);
+    const document = await this.prisma.document.findUnique({
+      where: {
+        docId,
+      },
+      include: {
+        tags: true,
+        user: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Document with docId ${docId} not found`);
+    }
+
+    if (document.user.uid !== uid) {
+      throw new UnauthorizedException(`Unauthorized`);
+    }
 
     await this.prisma.document.delete({
       where: {
         id: document.id,
       },
     });
-  }
-
-  private async getDocument(uid: string, docId: string) {
-    const document = await this.prisma.document.findUnique({
-      where: {
-        docId,
-      },
-      include: {
-        user: true,
-        tags: true,
-      },
-    });
-
-    if (!document) {
-      throw new NotFoundException('Document not found');
-    }
-
-    if (document.user.uid !== uid) {
-      throw new UnauthorizedException('User not authorized');
-    }
-
-    return document;
   }
 }
