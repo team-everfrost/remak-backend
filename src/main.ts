@@ -1,4 +1,8 @@
-import { ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -36,7 +40,20 @@ async function bootstrap() {
   }
 
   // Pipes
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      exceptionFactory: (errors) => {
+        throw new BadRequestException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          // message: 'Validation Error',
+          // 첫 번째 제약 조건의 메시지를 반환합니다.
+          message: Object.values(errors[0].constraints)[0],
+          error: 'Bad Request',
+        });
+      },
+    }),
+  );
 
   const port = configService.get<number>('PORT', 3000);
   await app.listen(port);
