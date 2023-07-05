@@ -53,11 +53,6 @@ export class DocumentController {
     return this.documentService.updateWebpage(uid, docId, webpageDto);
   }
 
-  // @Get()
-  // findAll(@GetUid() uid: string) {
-  //   return this.documentService.findAll(uid);
-  // }
-
   @Get()
   findAllWithCursor(
     @GetUid() uid: string,
