@@ -1,12 +1,10 @@
-import {
-  BadRequestException,
-  HttpStatus,
-  ValidationPipe,
-} from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { TransformInterceptor } from './interceptors/transform.interceptor';
 
 async function bootstrap() {
   (BigInt.prototype as any).toJSON = function () {
@@ -45,15 +43,18 @@ async function bootstrap() {
       whitelist: true,
       exceptionFactory: (errors) => {
         throw new BadRequestException({
-          statusCode: HttpStatus.BAD_REQUEST,
-          // message: 'Validation Error',
-          // 첫 번째 제약 조건의 메시지를 반환합니다.
-          message: Object.values(errors[0].constraints)[0],
-          error: 'Bad Request',
+          message: `invalid ${errors[0].property}`,
+          data: null,
         });
       },
     }),
   );
+
+  // Filters
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Interceptors
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   const port = configService.get<number>('PORT', 3000);
   await app.listen(port);
