@@ -3,25 +3,25 @@ import { Role, User } from '@prisma/client';
 
 export class UserDto {
   @ApiProperty({
-    description: 'The name of the user',
-    example: 'John Doe',
+    description: '유저 이름',
+    example: '김승일',
   })
   name: string;
 
   @ApiProperty({
-    description: 'The email of the user',
+    description: '유저 이메일',
     example: 'example@gmail.com',
   })
   email: string;
 
   @ApiProperty({
-    description: 'The image url of the user',
+    description: '유저 프로필 이미지 주소',
     example: 'https://example.com/image.png',
   })
   imageUrl: string;
 
   @ApiProperty({
-    description: 'The role of the user',
+    description: '유저 권한',
     example: Role.BASIC,
   })
   role: Role;
