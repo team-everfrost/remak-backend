@@ -35,7 +35,7 @@ model Social {
   provider   String
 
   userId BigInt @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -54,7 +54,7 @@ model Document {
   status  Status       @default(PENDING)
 
   userId BigInt @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   tags   Tag[]
 
   createdAt DateTime @default(now()) @map("created_at")

@@ -66,6 +66,12 @@ export class AuthService {
     return 'This action logs out a user';
   }
 
+  async deleteAll() {
+    // TODO: 테스트용. 배포 시 삭제
+    await this.prisma.user.deleteMany();
+    await this.prisma.email.deleteMany();
+  }
+
   async sendSignupCode(emailDto: EmailDto) {
     const { email } = emailDto;
 

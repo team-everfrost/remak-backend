@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Post,
@@ -35,6 +36,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   logout() {
     return this.authService.logout();
+  }
+
+  @Delete('delete-all')
+  deleteAll() {
+    // TODO: 테스트용. 배포 시 삭제
+    return this.authService.deleteAll();
   }
 
   @Post('/signup-code')
