@@ -3,61 +3,57 @@ import { DocumentType, PrismaClient, Role, Status } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const users = [
-    {
-      email: 'user1@example.com',
-      password: 'securepassword1',
-      name: 'User 1',
-      imageUrl: 'http://example.com/image1.jpg',
-      role: Role.BASIC,
-    },
-    {
-      email: 'user2@example.com',
-      password: 'securepassword2',
-      name: 'User 2',
-      imageUrl: 'http://example.com/image2.jpg',
-      role: Role.BASIC,
-    },
-    // add more users as needed
-  ];
-
-  // Create users
-  const createdUsers = await prisma.user.createMany({
-    data: users,
-    skipDuplicates: true, // skips records if already exist
-  });
-
-  const foundUsers = await prisma.user.findMany();
-
-  const documents = [
-    {
-      title: 'Document 1',
-      type: DocumentType.MEMO,
-      url: 'http://example.com/document1',
-      content: 'This is Document 1',
-      summary: 'Document 1 summary',
-      status: Status.APPROVED,
-      userId: foundUsers[0].id, // assuming this document belongs to the first user
-    },
-    {
-      title: 'Document 2',
-      type: DocumentType.WEBPAGE,
-      url: 'http://example.com/document2',
-      content: 'This is Document 2',
-      summary: 'Document 2 summary',
-      status: Status.PENDING,
-      userId: foundUsers[1].id, // assuming this document belongs to the second user
-    },
-    // add more documents as needed
-  ];
-
-  // Create documents
-  const createdDocuments = await prisma.document.createMany({
-    data: documents,
-    skipDuplicates: true, // skips records if already exist
-  });
-
-  console.log({ createdUsers, createdDocuments });
+  for (let i = 0; i < 10; i++) {
+    await prisma.user.create({
+      data: {
+        email: `email${i}@email.com`,
+        password: 'password',
+        name: `name${i}`,
+        imageUrl: `http://example.com/image${i}.jpg`,
+        role: Role.BASIC,
+        documents: {
+          create: [
+            {
+              title: `user${i} document1`,
+              type: DocumentType.MEMO,
+              url: `http://example.com/document${i}`,
+              content: `This is user${i} document1`,
+              summary: `user${i} document${i} summary`,
+              status: Status.EMBED_PENDING,
+              tags: {
+                create: [
+                  {
+                    name: `user${i} tag1`,
+                  },
+                  {
+                    name: `user${i} tag2`,
+                  },
+                ],
+              },
+            },
+            {
+              title: `user${i} document2`,
+              type: DocumentType.WEBPAGE,
+              url: `http://example.com/document${i}`,
+              content: `This is user${i} document2`,
+              summary: `user${i} document${i} summary`,
+              status: Status.EMBED_PENDING,
+              tags: {
+                create: [
+                  {
+                    name: `user${i} tag1`,
+                  },
+                  {
+                    name: `user${i} tag2`,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
+  }
 }
 
 main()
