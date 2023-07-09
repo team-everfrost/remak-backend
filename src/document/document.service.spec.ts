@@ -32,7 +32,7 @@ describe('DocumentService', () => {
     url: 'test image url',
     createdAt: new Date(),
     updatedAt: new Date(),
-    status: Status.PENDING,
+    status: Status.EMBED_PENDING,
     userId: BigInt(2),
     summary: 'test summary',
     user: mockUser,
