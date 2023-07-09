@@ -51,7 +51,7 @@ model Document {
   url     String?
   content String?
   summary String?
-  status  Status       @default(PENDING)
+  status  Status       @default(SCRAPE_PENDING)
 
   userId BigInt @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -102,8 +102,13 @@ enum DocumentType {
 }
 
 enum Status {
-  PENDING
-  PROCESSING
-  APPROVED
-  REJECTED
+  SCRAPE_PENDING
+  SCRAPE_PROCESSING
+  SCRAPE_REJECTED
+
+  EMBED_PENDING
+  EMBED_PROCESSING
+  EMBED_REJECTED
+
+  COMPLETED
 }
