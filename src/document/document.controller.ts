@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { DocumentService } from './document.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -54,6 +54,20 @@ export class DocumentController {
   }
 
   @Get()
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: Date,
+    description: 'cursor',
+    example: '2021-01-01T00:00:00.000Z',
+  })
+  @ApiQuery({
+    name: 'doc-id',
+    required: false,
+    type: String,
+    description: 'doc-id',
+    example: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+  })
   findAllWithCursor(
     @GetUid() uid: string,
     @Query('cursor') cursor?: Date,
