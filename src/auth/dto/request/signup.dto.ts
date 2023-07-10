@@ -12,7 +12,7 @@ export class SignupDto {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{9,}$/, {
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*]{9,}$/, {
     message:
       'Password must be at least 9 characters long, contain at least one letter and one number',
   })
