@@ -1,25 +1,25 @@
-FROM node:18
+FROM node:18 AS builder
 
 WORKDIR /app
 
-# COPY package.json and package-lock.json files
 COPY package*.json ./
-
-# generated prisma files
 COPY prisma ./prisma/
 
-# COPY tsconfig.json file
-COPY tsconfig.json ./
-
-# COPY
-COPY . .
-
 RUN npm install
-
 RUN npx prisma generate
 
-# Run and expose the server on port 3000
+COPY . .
+
+RUN npm run build
+
+FROM node:18
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/tsconfig.json ./
+
 EXPOSE 3000
 
-# A command to start the server
-CMD npm run start:dev
+CMD [ "npm", "run", "start:dev" ]

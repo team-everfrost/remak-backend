@@ -3,5 +3,6 @@ npm-debug.log
 dist
 test
 .dockerignore
-Dockerfile
-docker-compose.yml
+Dockerfile*
+docker-compose*
+.env
