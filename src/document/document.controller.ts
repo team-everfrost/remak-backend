@@ -59,21 +59,23 @@ export class DocumentController {
     name: 'cursor',
     required: false,
     type: Date,
-    description: 'cursor',
+    description:
+      '이전에 받은 문서들 중 마지막 문서의 updatedAt. 이 값이 없으면 현재 시간으로.',
     example: '2021-01-01T00:00:00.000Z',
   })
   @ApiQuery({
     name: 'doc-id',
     required: false,
     type: String,
-    description: 'doc-id',
+    description:
+      '이전에 받은 문서들 중 마지막 문서의 docId. 이 값이 없으면 가장 큰 UUID 값으로.',
     example: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'limit',
+    description: '한 번에 받을 문서의 개수. 최대 20개까지 가능. 기본값은 20.',
     example: 20,
   })
   findAllWithCursor(
