@@ -5,6 +5,7 @@ import {
   Get,
   Logger,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -68,16 +69,25 @@ export class DocumentController {
     description: 'doc-id',
     example: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
   })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'limit',
+    example: 20,
+  })
   findAllWithCursor(
     @GetUid() uid: string,
     @Query('cursor') cursor?: Date,
     @Query('doc-id') docId?: string,
+    @Query('limit', ParseIntPipe) limit?: number,
   ) {
     this.logger.debug(cursor);
     this.logger.debug(docId);
     cursor = cursor ? cursor : new Date();
     docId = docId ? docId : 'ffffffff-ffff-ffff-ffff-ffffffffffff';
-    return this.documentService.findByCursor(uid, cursor, docId, 10);
+    limit = limit && limit <= 20 ? limit : 20;
+    return this.documentService.findByCursor(uid, cursor, docId, limit);
   }
 
   @Get(':docId')

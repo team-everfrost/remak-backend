@@ -16,7 +16,7 @@ export class DocumentService {
 
   constructor(private prisma: PrismaService) {}
 
-  async findByCursor(uid: string, cursor: Date, docId: string, take = 10) {
+  async findByCursor(uid: string, cursor: Date, docId: string, take) {
     // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
 
     const documents = await this.prisma.document.findMany({
