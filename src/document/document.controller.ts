@@ -9,10 +9,13 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { DocumentService } from './document.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -25,6 +28,35 @@ export class DocumentController {
   private readonly logger: Logger = new Logger(DocumentController.name);
 
   constructor(private readonly documentService: DocumentService) {}
+
+  @Post('file/upload')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: { fileSize: 1024 * 1024 * 10 },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
+  })
+  uploadFile(
+    @GetUid() uid: string,
+    @UploadedFiles()
+    files: Express.Multer.File[],
+  ) {
+    return this.documentService.uploadFiles(uid, files);
+  }
 
   @Post('memo/create')
   createMemo(@GetUid() uid: string, @Body() memoDto: MemoDto) {

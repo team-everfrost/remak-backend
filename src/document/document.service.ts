@@ -1,9 +1,11 @@
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import {
   Injectable,
   Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DocumentType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -13,8 +15,23 @@ import { DocumentDto } from './dto/response/document.dto';
 @Injectable()
 export class DocumentService {
   private readonly logger: Logger = new Logger(DocumentService.name);
+  private readonly s3Client: S3Client = new S3Client({
+    region: this.configService.get<string>('AWS_REGION'),
+    credentials:
+      this.configService.get<string>('NODE_ENV') === 'development'
+        ? {
+            accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
+            secretAccessKey: this.configService.get<string>(
+              'AWS_SECRET_ACCESS_KEY',
+            ),
+          }
+        : undefined,
+  });
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {}
 
   async findByCursor(uid: string, cursor: Date, docId: string, take) {
     // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
@@ -221,10 +238,60 @@ export class DocumentService {
       throw new UnauthorizedException(`Unauthorized`);
     }
 
+    // TODO: delete s3 object
+
     await this.prisma.document.delete({
       where: {
         id: document.id,
       },
     });
+  }
+
+  async uploadFiles(uid: string, files: Express.Multer.File[]) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        uid,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with uid ${uid} not found`);
+    }
+
+    const documents = await Promise.all(
+      files.map(async (file) => {
+        const document = await this.prisma.document.create({
+          data: {
+            type: DocumentType.FILE,
+            user: {
+              connect: {
+                id: user.id,
+              },
+            },
+            title: file.originalname,
+          },
+          include: {
+            tags: true,
+          },
+        });
+
+        // upload to s3
+        // TODO: s3 upload 실패시 롤백
+        await this.s3Client.send(
+          new PutObjectCommand({
+            Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+            Key: document.docId,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+          }),
+        );
+
+        return new DocumentDto(document);
+      }),
+    );
+
+    this.logger.debug(documents);
+
+    return documents;
   }
 }
