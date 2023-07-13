@@ -39,8 +39,8 @@ jobs:
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: remak-api
-          environment_name: Remak-api-env-1
+          application_name: remak-backend
+          environment_name: Remak-backend-env-1
           version_label: gh-action-${{steps.current-time.outputs.formattedTime}}
           region: ap-northeast-2
           deployment_package: deploy.zip
