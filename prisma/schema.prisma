@@ -25,6 +25,7 @@ model User {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  Tag       Tag[]
 
   @@map("users")
 }
@@ -48,7 +49,7 @@ model Document {
   docId   String       @unique() @default(uuid()) @map("doc_id") // 외부 공개용
   title   String?
   type    DocumentType
-  url     String?
+  url     String? // for web page
   content String?
   summary String?
   status  Status       @default(SCRAPE_PENDING)
@@ -66,6 +67,9 @@ model Document {
 model Tag {
   id   BigInt @id @default(autoincrement())
   name String
+
+  userId BigInt @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   documents Document[]
 
