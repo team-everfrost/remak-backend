@@ -58,6 +58,11 @@ export class DocumentController {
     return this.documentService.uploadFiles(uid, files);
   }
 
+  @Get('file/download/:docId')
+  downloadFile(@GetUid() uid: string, @Param('docId') docId: string) {
+    return this.documentService.downloadFile(uid, docId);
+  }
+
   @Post('memo/create')
   createMemo(@GetUid() uid: string, @Body() memoDto: MemoDto) {
     return this.documentService.createMemo(uid, memoDto);

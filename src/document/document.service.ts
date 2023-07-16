@@ -1,4 +1,9 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   Injectable,
   Logger,
@@ -20,10 +25,9 @@ export class DocumentService {
     credentials:
       this.configService.get<string>('NODE_ENV') === 'development'
         ? {
-            accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
-            secretAccessKey: this.configService.get<string>(
-              'AWS_SECRET_ACCESS_KEY',
-            ),
+            accessKeyId: this.configService.get<string>('AWS_S3_ACCESS_KEY'),
+            secretAccessKey:
+              this.configService.get<string>('AWS_S3_SECRET_KEY'),
           }
         : undefined,
   });
@@ -248,6 +252,9 @@ export class DocumentService {
   }
 
   async uploadFiles(uid: string, files: Express.Multer.File[]) {
+    files.forEach((file) => {
+      this.logger.debug(file.mimetype, file.originalname, file.size);
+    });
     const user = await this.prisma.user.findUnique({
       where: {
         uid,
@@ -283,6 +290,9 @@ export class DocumentService {
             Key: document.docId,
             Body: file.buffer,
             ContentType: file.mimetype,
+            Metadata: {
+              originalname: file.originalname,
+            },
           }),
         );
 
@@ -293,5 +303,43 @@ export class DocumentService {
     this.logger.debug(documents);
 
     return documents;
+  }
+
+  async downloadFile(uid: string, docId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        uid,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with uid ${uid} not found`);
+    }
+
+    const document = await this.prisma.document.findUnique({
+      where: {
+        docId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Document with docId ${docId} not found`);
+    }
+
+    if (document.user.uid !== uid) {
+      throw new UnauthorizedException(`Unauthorized`);
+    }
+
+    return await getSignedUrl(
+      this.s3Client,
+      new GetObjectCommand({
+        Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+        Key: document.docId,
+      }),
+      { expiresIn: 60 * 60 * 24 },
+    );
   }
 }
