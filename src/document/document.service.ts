@@ -6,12 +6,14 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentType } from '@prisma/client';
+import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
 import { WebpageDto } from './dto/request/webpage.dto';
@@ -252,9 +254,6 @@ export class DocumentService {
   }
 
   async uploadFiles(uid: string, files: Express.Multer.File[]) {
-    files.forEach((file) => {
-      this.logger.debug(file.mimetype, file.originalname, file.size);
-    });
     const user = await this.prisma.user.findUnique({
       where: {
         uid,
@@ -265,44 +264,56 @@ export class DocumentService {
       throw new NotFoundException(`User with uid ${uid} not found`);
     }
 
-    const documents = await Promise.all(
-      files.map(async (file) => {
-        const document = await this.prisma.document.create({
-          data: {
-            type: DocumentType.FILE,
-            user: {
-              connect: {
-                id: user.id,
-              },
-            },
-            title: file.originalname,
-          },
-          include: {
-            tags: true,
-          },
-        });
+    const documentDtos: DocumentDto[] = [];
 
-        // upload to s3
-        // TODO: s3 upload 실패시 롤백
-        await this.s3Client.send(
+    for (const file of files) {
+      // multer가 latin1로 인코딩해서 보내줌. utf8로 변환
+      file.originalname = Buffer.from(file.originalname, 'latin1').toString(
+        'utf8',
+      );
+
+      const base64filename = Buffer.from(file.originalname).toString('base64');
+      const docId = uuid();
+
+      try {
+        const res = await this.s3Client.send(
           new PutObjectCommand({
             Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
-            Key: document.docId,
+            Key: docId,
             Body: file.buffer,
             ContentType: file.mimetype,
             Metadata: {
-              originalname: file.originalname,
+              // S3 Metadata에 한글 못써서 base64로 인코딩
+              originalname: base64filename,
             },
           }),
         );
-
-        return new DocumentDto(document);
-      }),
-    );
-
-    this.logger.debug(documents);
-
-    return documents;
+        // S3 upload 성공하면 DB에 저장
+        // TODO: 실패 로직 추가
+        if (res.$metadata.httpStatusCode === 200) {
+          const document = await this.prisma.document.create({
+            data: {
+              docId, // S3 object key
+              type: DocumentType.FILE,
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+              title: file.originalname,
+            },
+            include: {
+              tags: true,
+            },
+          });
+          documentDtos.push(new DocumentDto(document));
+        }
+      } catch (error) {
+        this.logger.error(error);
+        throw new InternalServerErrorException('upload failed');
+      }
+    }
+    return documentDtos;
   }
 
   async downloadFile(uid: string, docId: string) {
