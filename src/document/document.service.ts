@@ -290,11 +290,14 @@ export class DocumentService {
         );
         // S3 upload 성공하면 DB에 저장
         // TODO: 실패 로직 추가
+
+        const documentType = this.getDocumentType(file.mimetype);
+
         if (res.$metadata.httpStatusCode === 200) {
           const document = await this.prisma.document.create({
             data: {
               docId, // S3 object key
-              type: DocumentType.FILE,
+              type: documentType,
               user: {
                 connect: {
                   id: user.id,
@@ -352,5 +355,13 @@ export class DocumentService {
       }),
       { expiresIn: 60 * 60 * 24 },
     );
+  }
+
+  getDocumentType(mimetype: string): DocumentType {
+    const type = mimetype.split('/')[0];
+    if (type === 'image') {
+      return DocumentType.IMAGE;
+    }
+    return DocumentType.FILE;
   }
 }
