@@ -52,7 +52,7 @@ model Document {
   url     String? // for web page
   content String?
   summary String?
-  status  Status       @default(SCRAPE_PENDING)
+  status  Status // WEBPAGE: SCRPAE_PENDING, OTHERS: EMBED_PENDING
 
   userId BigInt @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

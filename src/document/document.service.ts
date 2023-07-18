@@ -12,7 +12,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DocumentType } from '@prisma/client';
+import { DocumentType, Status } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -114,6 +114,7 @@ export class DocumentService {
       data: {
         ...memoDto,
         type: DocumentType.MEMO,
+        status: Status.EMBED_PENDING,
         user: {
           connect: {
             id: user.id,
@@ -177,6 +178,7 @@ export class DocumentService {
       data: {
         ...webPageDto,
         type: DocumentType.WEBPAGE,
+        status: Status.SCRAPE_PENDING, // 웹페이지는 스크랩부터
         user: {
           connect: {
             id: user.id,
@@ -298,6 +300,7 @@ export class DocumentService {
             data: {
               docId, // S3 object key
               type: documentType,
+              status: Status.EMBED_PENDING,
               user: {
                 connect: {
                   id: user.id,
