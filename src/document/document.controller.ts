@@ -138,4 +138,18 @@ export class DocumentController {
   deleteOne(@GetUid() uid: string, @Param('docId') docId: string) {
     return this.documentService.deleteOne(uid, docId);
   }
+
+  @Get('find/:docId')
+  findByEmbedding(
+    @GetUid() uid: string,
+    @Param('docId') docId: string,
+    @Query('query') query: string,
+  ) {
+    // create 1536 size vector
+    const vector = [];
+    for (let i = 0; i < 1536; i++) {
+      vector.push(Math.random());
+    }
+    return this.documentService.queryVector(uid, docId, vector);
+  }
 }

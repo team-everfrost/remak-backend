@@ -12,7 +12,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DocumentType, Status } from '@prisma/client';
+import { DocumentType, EmbeddedText, Status } from '@prisma/client';
+import { toSql } from 'pgvector/utils';
 import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -97,6 +98,28 @@ export class DocumentService {
     }
 
     return new DocumentDto(document);
+  }
+
+  async insertVector(uid: string, docId: string, vec: number[]) {
+    const vector = toSql(vec);
+    await this.prisma.$executeRaw`INSERT INTO embedded_text (vector)
+                                  VALUES (${vector}::vector)`;
+  }
+
+  async queryVector(uid: string, docId: string, vec: number[]) {
+    const documtent = this.prisma.document.findUnique({
+      where: {
+        docId,
+      },
+    });
+    const vector = toSql(vec);
+    const items: EmbeddedText = await this.prisma
+      .$queryRaw`SELECT id, document_id
+                 FROM embedded_text
+                 ORDER BY vector <-> ${vector}::vector
+                 LIMIT 5`;
+
+    return items;
   }
 
   async createMemo(uid: string, memoDto: MemoDto) {
@@ -361,10 +384,8 @@ export class DocumentService {
   }
 
   getDocumentType(mimetype: string): DocumentType {
-    const type = mimetype.split('/')[0];
-    if (type === 'image') {
-      return DocumentType.IMAGE;
-    }
-    return DocumentType.FILE;
+    return mimetype.split('/')[0] === 'image'
+      ? DocumentType.IMAGE
+      : DocumentType.FILE;
   }
 }

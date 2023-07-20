@@ -2,13 +2,15 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model User {
@@ -58,8 +60,9 @@ model Document {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   tags   Tag[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at") // index?
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at") // index?
+  EmbeddedText EmbeddedText[]
 
   @@map("document")
 }
@@ -77,6 +80,30 @@ model Tag {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("tag")
+}
+
+model EmbeddedText {
+  id BigInt @id @default(autoincrement())
+
+  documentId BigInt   @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  uid String
+
+  type    DocumentType?
+  chapter String? // 챕터명, 소제목, …
+
+  startPageNumber Int? @map("start_page_number") // Memo와 웹페이지는 1로 고정
+  startLineNumber Int? @map("start_line_number")
+  endPageNumber   Int? @map("end_page_number")
+  endLineNumber   Int? @map("end_line_number")
+
+  // 모델 변경 등으로 새로운 EmbededText가 추가되었을 때 createdAt을 기준으로 이전 데이터 삭제
+  createdAt DateTime @default(now()) @map("created_at")
+
+  vector Unsupported("vector(1536)")?
+
+  @@map("embedded_text")
 }
 
 // 나중에 인메모리 DB로 바꿀 것
