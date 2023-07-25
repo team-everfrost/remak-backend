@@ -34,23 +34,23 @@ export class AuthController {
   @Post('/local/logout')
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
-  logout() {
+  logout(): Promise<void> {
     return this.authService.logout();
   }
 
   @Delete('delete-all')
-  deleteAll() {
+  deleteAll(): Promise<void> {
     // TODO: 테스트용. 배포 시 삭제
     return this.authService.deleteAll();
   }
 
   @Post('/signup-code')
-  sendSignupCode(@Body() emailDto: EmailDto) {
+  sendSignupCode(@Body() emailDto: EmailDto): Promise<void> {
     return this.authService.sendSignupCode(emailDto);
   }
 
   @Post('/verify-code')
-  verifySignupCode(@Body() verifyCodeDto: VerifyCodeDto) {
+  verifySignupCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<void> {
     return this.authService.verifySignupCode(verifyCodeDto);
   }
 }

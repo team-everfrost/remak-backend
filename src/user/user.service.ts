@@ -7,7 +7,7 @@ import { UserDto } from './dto/response/user.dto';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findOne(uid: string) {
+  async findOne(uid: string): Promise<UserDto> {
     const user = await this.prisma.user.findUnique({
       where: {
         uid,
@@ -21,7 +21,7 @@ export class UserService {
     return new UserDto(user);
   }
 
-  async update(uid: string, updateUserDto: UpdateUserDto) {
+  async update(uid: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const user = await this.prisma.user.update({
       where: {
         uid,

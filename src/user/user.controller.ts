@@ -4,6 +4,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { UpdateUserDto } from './dto/request/update-user.dto';
 import { UserService } from './user.service';
+import { UserDto } from './dto/response/user.dto';
 
 @Controller('user')
 @UseGuards(AuthGuard('jwt'))
@@ -12,12 +13,15 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  findOne(@GetUid() uid: string) {
+  findOne(@GetUid() uid: string): Promise<UserDto> {
     return this.userService.findOne(uid);
   }
 
   @Patch()
-  update(@GetUid() uid: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @GetUid() uid: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UserDto> {
     return this.userService.update(uid, updateUserDto);
   }
 }

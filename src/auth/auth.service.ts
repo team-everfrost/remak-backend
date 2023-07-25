@@ -61,9 +61,8 @@ export class AuthService {
     return await this.getToken(user);
   }
 
-  logout() {
+  async logout() {
     // TODO: 액세스 토큰 블랙리스트 + 리프레시 토큰 삭제
-    return 'This action logs out a user';
   }
 
   async deleteAll() {
@@ -72,7 +71,7 @@ export class AuthService {
     await this.prisma.email.deleteMany();
   }
 
-  async sendSignupCode(emailDto: EmailDto) {
+  async sendSignupCode(emailDto: EmailDto): Promise<void> {
     const { email } = emailDto;
 
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -97,7 +96,7 @@ export class AuthService {
     });
   }
 
-  async verifySignupCode(verifyCodeDto: VerifyCodeDto) {
+  async verifySignupCode(verifyCodeDto: VerifyCodeDto): Promise<void> {
     const { email, signupCode } = verifyCodeDto;
 
     const emailData = await this.prisma.email.findUnique({
@@ -134,7 +133,7 @@ export class AuthService {
     return { accessToken };
   }
 
-  getSignupCode(bytes: number) {
+  getSignupCode(bytes: number): string {
     // bytes * 2 길이의 랜덤 문자열 생성
     return crypto.randomBytes(bytes).toString('hex');
   }
