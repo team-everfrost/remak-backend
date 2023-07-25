@@ -92,6 +92,7 @@ model EmbeddedText {
 
   type    DocumentType?
   chapter String? // 챕터명, 소제목, …
+  content String? // 내용
 
   startPageNumber Int? @map("start_page_number") // Memo와 웹페이지는 1로 고정
   startLineNumber Int? @map("start_line_number")
