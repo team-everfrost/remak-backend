@@ -6,7 +6,7 @@ export class AuthDto {
   @IsNotEmpty()
   @ApiProperty({
     description: '로그인 이메일',
-    example: 'example@examle.com',
+    example: 'example0@example.com',
   })
   email: string;
 
@@ -14,7 +14,7 @@ export class AuthDto {
   @IsNotEmpty()
   @ApiProperty({
     description: '로그인 비밀번호',
-    example: '1a2b3c4d',
+    example: 'password',
   })
   password: string;
 }
