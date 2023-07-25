@@ -12,8 +12,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DocumentType, EmbeddedText, Status } from '@prisma/client';
-import { toSql } from 'pgvector/utils';
+import { DocumentType, Status } from '@prisma/client';
+import { fromSql, toSql } from 'pgvector/utils';
 import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -40,7 +40,12 @@ export class DocumentService {
     private configService: ConfigService,
   ) {}
 
-  async findByCursor(uid: string, cursor: Date, docId: string, take) {
+  async findByCursor(
+    uid: string,
+    cursor: Date,
+    docId: string,
+    take: number,
+  ): Promise<DocumentDto[]> {
     // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
 
     const documents = await this.prisma.document.findMany({
@@ -78,7 +83,7 @@ export class DocumentService {
     return documents.map((document) => new DocumentDto(document));
   }
 
-  async findOne(uid: string, docId: string) {
+  async findOne(uid: string, docId: string): Promise<DocumentDto> {
     const document = await this.prisma.document.findUnique({
       where: {
         docId,
@@ -100,29 +105,59 @@ export class DocumentService {
     return new DocumentDto(document);
   }
 
-  async insertVector(uid: string, docId: string, vec: number[]) {
+  async insertVector(uid: string, docId: string, vec: number[]): Promise<void> {
     const vector = toSql(vec);
-    await this.prisma.$executeRaw`INSERT INTO embedded_text (vector)
-                                  VALUES (${vector}::vector)`;
+    await this.prisma.$executeRaw`insert into embedded_text (vector)
+                                      values (${vector}::vector)`;
   }
 
-  async queryVector(uid: string, docId: string, vec: number[]) {
-    const documtent = this.prisma.document.findUnique({
+  async queryVector(
+    uid: string,
+    query: string,
+    vec: number[],
+  ): Promise<DocumentDto[]> {
+    // vector가 unsupported type이라서 toSql, fromSql로 변환해야 함
+    const firstDocumentVector: any = await this.prisma.$queryRaw`
+            select uid, vector::text
+            from embedded_text
+            where uid = ${uid}
+            limit 1;
+        `;
+    const v = fromSql(firstDocumentVector[0].vector);
+    const vector = toSql(v);
+    const items: any = await this.prisma.$queryRaw`
+            with ranked_docs as ( select e.document_id,
+                                         e.vector <-> ${vector}::vector                                            as distance,
+                                         rank()
+                                         over (partition by e.document_id order by e.vector <-> ${vector}::vector) as rank
+                                  from document as d
+                                           join embedded_text as e on d.id = e.document_id
+                                  where e.vector is not null
+                                    and e.uid = ${uid} )
+            select document_id, distance
+            from ranked_docs
+            where rank = 1
+            order by distance
+            limit 5;
+        `;
+
+    this.logger.debug(`items: ${JSON.stringify(items)}`);
+
+    const documents = await this.prisma.document.findMany({
       where: {
-        docId,
+        id: {
+          in: items.map((item) => item.document_id),
+        },
+      },
+      include: {
+        tags: true,
       },
     });
-    const vector = toSql(vec);
-    const items: EmbeddedText = await this.prisma
-      .$queryRaw`SELECT id, document_id
-                 FROM embedded_text
-                 ORDER BY vector <-> ${vector}::vector
-                 LIMIT 5`;
 
-    return items;
+    return documents.map((document) => new DocumentDto(document));
   }
 
-  async createMemo(uid: string, memoDto: MemoDto) {
+  async createMemo(uid: string, memoDto: MemoDto): Promise<DocumentDto> {
     const user = await this.prisma.user.findUnique({
       where: {
         uid,
@@ -152,7 +187,11 @@ export class DocumentService {
     return new DocumentDto(document);
   }
 
-  async updateMemo(uid: string, docId: string, memoDto: MemoDto) {
+  async updateMemo(
+    uid: string,
+    docId: string,
+    memoDto: MemoDto,
+  ): Promise<DocumentDto> {
     const document = await this.prisma.document.findUnique({
       where: {
         docId,
@@ -186,7 +225,10 @@ export class DocumentService {
     return new DocumentDto(updatedDocument);
   }
 
-  async createWebpage(uid: string, webPageDto: WebpageDto) {
+  async createWebpage(
+    uid: string,
+    webPageDto: WebpageDto,
+  ): Promise<DocumentDto> {
     const user = await this.prisma.user.findUnique({
       where: {
         uid,
@@ -216,7 +258,11 @@ export class DocumentService {
     return new DocumentDto(document);
   }
 
-  async updateWebpage(uid: string, docId: string, webPageDto: WebpageDto) {
+  async updateWebpage(
+    uid: string,
+    docId: string,
+    webPageDto: WebpageDto,
+  ): Promise<DocumentDto> {
     const document = await this.prisma.document.findUnique({
       where: {
         docId,
@@ -250,7 +296,7 @@ export class DocumentService {
     return new DocumentDto(updatedDocument);
   }
 
-  async deleteOne(uid: string, docId: string) {
+  async deleteOne(uid: string, docId: string): Promise<void> {
     const document = await this.prisma.document.findUnique({
       where: {
         docId,
@@ -278,7 +324,10 @@ export class DocumentService {
     });
   }
 
-  async uploadFiles(uid: string, files: Express.Multer.File[]) {
+  async uploadFiles(
+    uid: string,
+    files: Express.Multer.File[],
+  ): Promise<DocumentDto[]> {
     const user = await this.prisma.user.findUnique({
       where: {
         uid,
@@ -345,7 +394,7 @@ export class DocumentService {
     return documentDtos;
   }
 
-  async downloadFile(uid: string, docId: string) {
+  async downloadFile(uid: string, docId: string): Promise<string> {
     const user = await this.prisma.user.findUnique({
       where: {
         uid,

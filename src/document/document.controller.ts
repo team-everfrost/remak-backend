@@ -20,6 +20,7 @@ import { GetUid } from '../decorators/get-uid.decorator';
 import { DocumentService } from './document.service';
 import { MemoDto } from './dto/request/memo.dto';
 import { WebpageDto } from './dto/request/webpage.dto';
+import { DocumentDto } from './dto/response/document.dto';
 
 @Controller('document')
 @UseGuards(AuthGuard('jwt'))
@@ -54,17 +55,23 @@ export class DocumentController {
     @GetUid() uid: string,
     @UploadedFiles()
     files: Express.Multer.File[],
-  ) {
+  ): Promise<DocumentDto[]> {
     return this.documentService.uploadFiles(uid, files);
   }
 
   @Get('file/download/:docId')
-  downloadFile(@GetUid() uid: string, @Param('docId') docId: string) {
+  downloadFile(
+    @GetUid() uid: string,
+    @Param('docId') docId: string,
+  ): Promise<string> {
     return this.documentService.downloadFile(uid, docId);
   }
 
   @Post('memo/create')
-  createMemo(@GetUid() uid: string, @Body() memoDto: MemoDto) {
+  createMemo(
+    @GetUid() uid: string,
+    @Body() memoDto: MemoDto,
+  ): Promise<DocumentDto> {
     return this.documentService.createMemo(uid, memoDto);
   }
 
@@ -73,12 +80,15 @@ export class DocumentController {
     @GetUid() uid: string,
     @Param('docId') docId: string,
     @Body() memoDto: MemoDto,
-  ) {
+  ): Promise<DocumentDto> {
     return this.documentService.updateMemo(uid, docId, memoDto);
   }
 
   @Post('webpage/create')
-  createWebpage(@GetUid() uid: string, @Body() webpageDto: WebpageDto) {
+  createWebpage(
+    @GetUid() uid: string,
+    @Body() webpageDto: WebpageDto,
+  ): Promise<DocumentDto> {
     return this.documentService.createWebpage(uid, webpageDto);
   }
 
@@ -87,7 +97,7 @@ export class DocumentController {
     @GetUid() uid: string,
     @Param('docId') docId: string,
     @Body() webpageDto: WebpageDto,
-  ) {
+  ): Promise<DocumentDto> {
     return this.documentService.updateWebpage(uid, docId, webpageDto);
   }
 
@@ -120,7 +130,7 @@ export class DocumentController {
     @Query('cursor') cursor?: Date,
     @Query('doc-id') docId?: string,
     @Query('limit', ParseIntPipe) limit?: number,
-  ) {
+  ): Promise<DocumentDto[]> {
     this.logger.debug(cursor);
     this.logger.debug(docId);
     cursor = cursor ? cursor : new Date();
@@ -130,26 +140,29 @@ export class DocumentController {
   }
 
   @Get(':docId')
-  findOne(@GetUid() uid: string, @Param('docId') docId: string) {
+  findOne(
+    @GetUid() uid: string,
+    @Param('docId') docId: string,
+  ): Promise<DocumentDto> {
     return this.documentService.findOne(uid, docId);
   }
 
   @Delete(':docId')
-  deleteOne(@GetUid() uid: string, @Param('docId') docId: string) {
+  deleteOne(
+    @GetUid() uid: string,
+    @Param('docId') docId: string,
+  ): Promise<void> {
     return this.documentService.deleteOne(uid, docId);
   }
 
-  @Get('find/:docId')
-  findByEmbedding(
+  @Get('embedding/:query')
+  searchByEmbedding(
     @GetUid() uid: string,
-    @Param('docId') docId: string,
     @Query('query') query: string,
-  ) {
-    // create 1536 size vector
-    const vector = [];
-    for (let i = 0; i < 1536; i++) {
-      vector.push(Math.random());
-    }
-    return this.documentService.queryVector(uid, docId, vector);
+  ): Promise<DocumentDto[]> {
+    // TODO: query embedding
+    // create 1536 size random vector 0~1
+    const vector = Array.from({ length: 1536 }, () => Math.random());
+    return this.documentService.queryVector(uid, query, vector);
   }
 }
