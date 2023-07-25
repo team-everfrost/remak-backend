@@ -125,19 +125,14 @@ export class DocumentService {
         `;
     const v = fromSql(firstDocumentVector[0].vector);
     const vector = toSql(v);
+
     const items: any = await this.prisma.$queryRaw`
-            with ranked_docs as ( select e.document_id,
-                                         e.vector <-> ${vector}::vector                                            as distance,
-                                         rank()
-                                         over (partition by e.document_id order by e.vector <-> ${vector}::vector) as rank
-                                  from document as d
-                                           join embedded_text as e on d.id = e.document_id
-                                  where e.vector is not null
-                                    and e.uid = ${uid} )
-            select document_id, distance
-            from ranked_docs
-            where rank = 1
-            order by distance
+            select document_id, min_distance
+            from ( select document_id, min(vector <-> ${vector}::vector) as min_distance
+                   from embedded_text
+                   where uid = ${uid}
+                   group by document_id ) as subquery
+            order by min_distance
             limit 5;
         `;
 
