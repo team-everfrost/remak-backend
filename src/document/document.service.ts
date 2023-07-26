@@ -116,16 +116,8 @@ export class DocumentService {
     query: string,
     vec: number[],
   ): Promise<DocumentDto[]> {
-    // vector는 unsupported data type이라서 string으로 변환해서 쿼리
-    // TODO: 첫 번째 문서의 vector 사용 대신 주어진 query로 vector 생성하도록 변경
-    const firstDocumentVector: any = await this.prisma.$queryRaw`
-            select uid, vector::text
-            from embedded_text
-            where uid = ${uid}
-            limit 1;
-        `;
+    const vector = toSql(vec);
 
-    const vector: string = firstDocumentVector[0].vector;
     const items: any = await this.prisma.$queryRaw`
             select document_id, min_distance
             from ( select document_id, min(vector <-> ${vector}::vector) as min_distance
