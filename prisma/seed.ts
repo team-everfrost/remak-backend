@@ -63,17 +63,17 @@ async function createUserWithDocumentsAndTags(index: number, numDocs: number) {
   return createdUser;
 }
 
-async function createEmbeddedText(documentId: bigint, uid: string) {
+async function createEmbeddedText(documentId: bigint, userId: bigint) {
   const vec = Array.from({ length: 1536 }, () => Math.random());
-  await prisma.$executeRaw`insert into embedded_text (document_id, uid, vector)
-                             values (${documentId}, ${uid}, ${JSON.stringify(
+  await prisma.$executeRaw`insert into embedded_text (document_id, user_id, vector)
+                           values (${documentId}, ${userId}, ${JSON.stringify(
     vec,
   )}::vector)`;
 
   // 중복 문서를 검색하지 않는 기능을 테스트하기 위해 비슷한 벡터를 만듦
   // 비슷한 벡터를 만들기 위해 0.5보다 작은 값은 0.1을 더해줌
-  await prisma.$executeRaw`insert into embedded_text (document_id, uid, vector)
-                             values (${documentId}, ${uid}, ${JSON.stringify(
+  await prisma.$executeRaw`insert into embedded_text (document_id, user_id, vector)
+                           values (${documentId}, ${userId}, ${JSON.stringify(
     vec.map((v) => (v < 0.5 ? v + 0.1 : v)),
   )}::vector)`;
 }
@@ -83,9 +83,7 @@ async function main() {
     try {
       const user = await createUserWithDocumentsAndTags(i, 100);
       const docs: Document[] = user.documents;
-      await Promise.all(
-        docs.map((doc) => createEmbeddedText(doc.id, user.uid)),
-      );
+      await Promise.all(docs.map((doc) => createEmbeddedText(doc.id, user.id)));
     } catch (e) {
       console.error(`Error occurred while creating user with index ${i}: ${e}`);
     }
