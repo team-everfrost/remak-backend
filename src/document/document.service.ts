@@ -19,6 +19,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
 import { WebpageDto } from './dto/request/webpage.dto';
 import { DocumentDto } from './dto/response/document.dto';
+import { OpenAiService } from '../openai/open-ai.service';
 
 @Injectable()
 export class DocumentService {
@@ -38,6 +39,7 @@ export class DocumentService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private openAiService: OpenAiService,
   ) {}
 
   async findByCursor(
@@ -46,13 +48,12 @@ export class DocumentService {
     docId: string,
     take: number,
   ): Promise<DocumentDto[]> {
-    // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
+    const user = await this.getUserByUid(uid);
 
+    // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
     const documents = await this.prisma.document.findMany({
       where: {
-        user: {
-          uid,
-        },
+        userId: user.id,
         // updatedAt < cursor OR (updatedAt = cursor AND document.docId < docId)
         // updatedAt 인덱스 타게?
         OR: [
@@ -79,7 +80,6 @@ export class DocumentService {
       ],
       take,
     });
-    this.logger.debug(documents);
     return documents.map((document) => new DocumentDto(document));
   }
 
@@ -105,28 +105,20 @@ export class DocumentService {
     return new DocumentDto(document);
   }
 
-  async insertVector(uid: string, docId: string, vec: number[]): Promise<void> {
-    const vector = toSql(vec);
-    await this.prisma.$executeRaw`insert into embedded_text (vector)
-                                      values (${vector}::vector)`;
-  }
-
-  async queryVector(
-    uid: string,
-    query: string,
-    vec: number[],
-  ): Promise<DocumentDto[]> {
-    const vector = toSql(vec);
+  async queryVector(uid: string, query: string): Promise<DocumentDto[]> {
+    const user = await this.getUserByUid(uid);
+    const vec: number[] = await this.openAiService.getEmbedding(query);
+    const vector: string = toSql(vec);
 
     const items: any = await this.prisma.$queryRaw`
-            select document_id, min_distance
-            from ( select document_id, min(vector <-> ${vector}::vector) as min_distance
-                   from embedded_text
-                   where uid = ${uid}
-                   group by document_id ) as subquery
-            order by min_distance
-            limit 5;
-        `;
+        select document_id, min_distance
+        from ( select document_id, min(vector <-> ${vector}::vector) as min_distance
+               from embedded_text
+               where user_id = ${user.id}
+               group by document_id ) as subquery
+        order by min_distance
+        limit 5;
+    `;
 
     this.logger.debug(`items: ${JSON.stringify(items)}`);
 
@@ -145,15 +137,7 @@ export class DocumentService {
   }
 
   async createMemo(uid: string, memoDto: MemoDto): Promise<DocumentDto> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        uid,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with uid ${uid} not found`);
-    }
+    const user = await this.getUserByUid(uid);
 
     const document = await this.prisma.document.create({
       data: {
@@ -216,15 +200,7 @@ export class DocumentService {
     uid: string,
     webPageDto: WebpageDto,
   ): Promise<DocumentDto> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        uid,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with uid ${uid} not found`);
-    }
+    const user = await this.getUserByUid(uid);
 
     const document = await this.prisma.document.create({
       data: {
@@ -315,16 +291,7 @@ export class DocumentService {
     uid: string,
     files: Express.Multer.File[],
   ): Promise<DocumentDto[]> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        uid,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with uid ${uid} not found`);
-    }
-
+    const user = await this.getUserByUid(uid);
     const documentDtos: DocumentDto[] = [];
 
     for (const file of files) {
@@ -382,16 +349,6 @@ export class DocumentService {
   }
 
   async downloadFile(uid: string, docId: string): Promise<string> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        uid,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with uid ${uid} not found`);
-    }
-
     const document = await this.prisma.document.findUnique({
       where: {
         docId,
@@ -419,9 +376,23 @@ export class DocumentService {
     );
   }
 
-  getDocumentType(mimetype: string): DocumentType {
+  private getDocumentType(mimetype: string): DocumentType {
     return mimetype.split('/')[0] === 'image'
       ? DocumentType.IMAGE
       : DocumentType.FILE;
+  }
+
+  private async getUserByUid(uid: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        uid,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with uid ${uid} not found`);
+    }
+
+    return user;
   }
 }

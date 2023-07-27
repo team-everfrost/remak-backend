@@ -155,14 +155,18 @@ export class DocumentController {
     return this.documentService.deleteOne(uid, docId);
   }
 
-  @Get('embedding/:query')
+  @Get('search/embedding')
+  @ApiQuery({
+    name: 'query',
+    required: true,
+    type: String,
+    description: '임베딩 검색할 쿼리',
+  })
   searchByEmbedding(
     @GetUid() uid: string,
     @Query('query') query: string,
   ): Promise<DocumentDto[]> {
-    // TODO: query embedding
-    // create 1536 size random vector 0~1
-    const vector = Array.from({ length: 1536 }, () => Math.random());
-    return this.documentService.queryVector(uid, query, vector);
+    this.logger.debug(`query: ${query}`);
+    return this.documentService.queryVector(uid, query);
   }
 }
