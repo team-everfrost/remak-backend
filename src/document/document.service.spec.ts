@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DocumentType, Role, Status } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { DocumentService } from './document.service';
+import { OpenAiService } from '../openai/open-ai.service';
 
 describe('DocumentService', () => {
   let service: DocumentService;
@@ -44,6 +45,7 @@ describe('DocumentService', () => {
       providers: [
         DocumentService,
         ConfigService,
+        OpenAiService,
         {
           provide: PrismaService,
           useValue: {

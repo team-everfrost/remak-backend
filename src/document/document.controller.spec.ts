@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { DocumentController } from './document.controller';
 import { DocumentService } from './document.service';
+import { OpenAiService } from '../openai/open-ai.service';
 
 describe('DocumentController', () => {
   let controller: DocumentController;
@@ -13,6 +14,7 @@ describe('DocumentController', () => {
       providers: [
         DocumentService,
         ConfigService,
+        OpenAiService,
         { provide: PrismaService, useValue: {} },
       ],
     }).compile();

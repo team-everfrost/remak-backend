@@ -41,6 +41,7 @@
     "crypto": "^1.0.1",
     "multer": "^1.4.4",
     "nodemailer": "^6.9.3",
+    "openai": "^3.3.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "pgvector": "^0.1.4",
