@@ -65,12 +65,6 @@ export class AuthService {
     // TODO: 액세스 토큰 블랙리스트 + 리프레시 토큰 삭제
   }
 
-  async deleteAll() {
-    // TODO: 테스트용. 배포 시 삭제
-    await this.prisma.user.deleteMany();
-    await this.prisma.email.deleteMany();
-  }
-
   async sendSignupCode(emailDto: EmailDto): Promise<void> {
     const { email } = emailDto;
 
