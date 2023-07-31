@@ -1,17 +1,10 @@
 import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import {
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { DocumentType, Status } from '@prisma/client';
 import { toSql } from 'pgvector/utils';
 import { v4 as uuid } from 'uuid';
@@ -20,26 +13,16 @@ import { MemoDto } from './dto/request/memo.dto';
 import { WebpageDto } from './dto/request/webpage.dto';
 import { DocumentDto } from './dto/response/document.dto';
 import { OpenAiService } from '../openai/open-ai.service';
+import { AwsService } from '../aws/aws.service';
 
 @Injectable()
 export class DocumentService {
   private readonly logger: Logger = new Logger(DocumentService.name);
-  private readonly s3Client: S3Client = new S3Client({
-    region: this.configService.get<string>('AWS_REGION'),
-    credentials:
-      this.configService.get<string>('NODE_ENV') === 'development'
-        ? {
-            accessKeyId: this.configService.get<string>('AWS_S3_ACCESS_KEY'),
-            secretAccessKey:
-              this.configService.get<string>('AWS_S3_SECRET_KEY'),
-          }
-        : undefined,
-  });
 
   constructor(
     private prisma: PrismaService,
-    private configService: ConfigService,
     private openAiService: OpenAiService,
+    private awsService: AwsService,
   ) {}
 
   async findByCursor(
@@ -278,8 +261,7 @@ export class DocumentService {
       throw new UnauthorizedException(`Unauthorized`);
     }
 
-    // TODO: delete s3 object
-
+    await this.awsService.deleteObjectFromS3(document.docId);
     await this.prisma.document.delete({
       where: {
         id: document.id,
@@ -304,42 +286,25 @@ export class DocumentService {
       const docId = uuid();
 
       try {
-        const res = await this.s3Client.send(
-          new PutObjectCommand({
-            Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
-            Key: docId,
-            Body: file.buffer,
-            ContentType: file.mimetype,
-            Metadata: {
-              // S3 Metadata에 한글 못써서 base64로 인코딩
-              originalname: base64filename,
-            },
-          }),
-        );
-        // S3 upload 성공하면 DB에 저장
-        // TODO: 실패 로직 추가
-
+        await this.awsService.putObjectToS3(docId, file, base64filename);
         const documentType = this.getDocumentType(file.mimetype);
-
-        if (res.$metadata.httpStatusCode === 200) {
-          const document = await this.prisma.document.create({
-            data: {
-              docId, // S3 object key
-              type: documentType,
-              status: Status.EMBED_PENDING,
-              user: {
-                connect: {
-                  id: user.id,
-                },
+        const document = await this.prisma.document.create({
+          data: {
+            docId, // S3 object key
+            type: documentType,
+            status: Status.EMBED_PENDING,
+            user: {
+              connect: {
+                id: user.id,
               },
-              title: file.originalname,
             },
-            include: {
-              tags: true,
-            },
-          });
-          documentDtos.push(new DocumentDto(document));
-        }
+            title: file.originalname,
+          },
+          include: {
+            tags: true,
+          },
+        });
+        documentDtos.push(new DocumentDto(document));
       } catch (error) {
         this.logger.error(error);
         throw new InternalServerErrorException('upload failed');
@@ -366,14 +331,7 @@ export class DocumentService {
       throw new UnauthorizedException(`Unauthorized`);
     }
 
-    return await getSignedUrl(
-      this.s3Client,
-      new GetObjectCommand({
-        Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
-        Key: document.docId,
-      }),
-      { expiresIn: 60 * 60 * 24 },
-    );
+    return await this.awsService.getSignedUrlFromS3(docId);
   }
 
   private getDocumentType(mimetype: string): DocumentType {

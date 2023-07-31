@@ -5,6 +5,7 @@ import { DocumentType, Role, Status } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { DocumentService } from './document.service';
 import { OpenAiService } from '../openai/open-ai.service';
+import { AwsService } from '../aws/aws.service';
 
 describe('DocumentService', () => {
   let service: DocumentService;
@@ -46,6 +47,7 @@ describe('DocumentService', () => {
         DocumentService,
         ConfigService,
         OpenAiService,
+        AwsService,
         {
           provide: PrismaService,
           useValue: {
