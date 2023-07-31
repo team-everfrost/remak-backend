@@ -13,9 +13,9 @@ services:
       - redis
 
   db:
-    image: postgres:14.8
+    image: ankane/pgvector
     ports:
-      - "5431:5432"
+      - "5432:5432"
     restart: always
     environment:
       POSTGRES_DB: postgres
@@ -24,9 +24,9 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - db-data:/var/lib/postgresql/data
-
+  
   redis:
-    image: redis:6.2
+    image: redis:latest
     ports:
       - "6379:6379"
     volumes:
