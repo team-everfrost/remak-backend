@@ -138,6 +138,8 @@ export class DocumentService {
       },
     });
 
+    await this.requestEmbed(document.id);
+
     return new DocumentDto(document);
   }
 
@@ -338,6 +340,10 @@ export class DocumentService {
     return mimetype.split('/')[0] === 'image'
       ? DocumentType.IMAGE
       : DocumentType.FILE;
+  }
+
+  private async requestEmbed(documentId: bigint) {
+    await this.awsService.sendMessageToEmbedQueue(documentId);
   }
 
   private async getUserByUid(uid: string) {

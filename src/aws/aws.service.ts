@@ -6,7 +6,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { SQSClient } from '@aws-sdk/client-sqs';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
@@ -84,5 +84,18 @@ export class AwsService {
     if (res.$metadata.httpStatusCode !== 204) {
       throw new Error('Failed to delete file from S3');
     }
+  }
+
+  async sendMessageToEmbedQueue(documentId: bigint): Promise<void> {
+    const command = new SendMessageCommand({
+      QueueUrl: this.configService.get('AWS_SQS_EMBED_QUEUE_URL'),
+      MessageBody: JSON.stringify({ documentId }),
+    });
+    const res = await this.sqsClient.send(command);
+    this.logger.log(
+      `Sent message to SQS. documentId: ${documentId} res: ${JSON.stringify(
+        res,
+      )}`,
+    );
   }
 }
