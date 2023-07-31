@@ -95,7 +95,7 @@ export class DocumentService {
 
     const items: any = await this.prisma.$queryRaw`
         select document_id, min_distance
-        from ( select document_id, min(vector <-> ${vector}::vector) as min_distance
+        from ( select document_id, min((vector <#> ${vector}::vector) * - 1) as min_distance
                from embedded_text
                where user_id = ${user.id}
                group by document_id ) as subquery
