@@ -138,6 +138,7 @@ export class DocumentService {
       },
     });
 
+    // 임베딩 요청
     await this.requestEmbed(document.id);
 
     return new DocumentDto(document);
