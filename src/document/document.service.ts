@@ -88,32 +88,61 @@ export class DocumentService {
     return new DocumentDto(document);
   }
 
-  async queryVector(uid: string, query: string): Promise<DocumentDto[]> {
+  async findByEmbedding(uid: string, query: string): Promise<DocumentDto[]> {
     const user = await this.getUserByUid(uid);
     const vec: number[] = await this.openAiService.getEmbedding(query);
     const vector: string = toSql(vec);
 
-    const items: any = await this.prisma.$queryRaw`
-        select document_id, min_distance
-        from ( select document_id, min(vector <#> ${vector}::vector) as min_distance
-               from embedded_text
-               where user_id = ${user.id}
-               group by document_id ) as subquery
-        order by min_distance
-        limit 5;
+    const rawItems: any = await this.prisma.$queryRaw`
+    select d.*, array_agg(t.name) as tags, subquery.min_distance
+    from document as d
+    join ( select document_id, min(vector <#> ${vector}::vector) as min_distance
+          from embedded_text
+          where user_id = ${user.id}
+          group by document_id ) as subquery
+    on d.id = subquery.document_id
+    left join "_DocumentToTag" as dt on d.id = dt."A"
+    left join tag as t on dt."B" = t.id
+    group by d.id, subquery.min_distance
+    order by subquery.min_distance
+    limit 5;
     `;
 
-    this.logger.debug(`items: ${JSON.stringify(items)}`);
+    this.logger.debug(`rawItems: ${JSON.stringify(rawItems)}`);
 
+    return rawItems.map((item) => ({
+      docId: item.doc_id,
+      title: item.title,
+      type: item.type,
+      url: item.url,
+      content: item.content,
+      summary: item.summary,
+      status: item.status,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+      tags: item.tags,
+    }));
+  }
+
+  async findByFullText(uid: string, query: string): Promise<DocumentDto[]> {
+    const user = await this.getUserByUid(uid);
     const documents = await this.prisma.document.findMany({
       where: {
-        id: {
-          in: items.map((item) => item.document_id),
-        },
+        AND: [
+          {
+            userId: user.id,
+          },
+          {
+            content: {
+              search: query,
+            },
+          },
+        ],
       },
       include: {
         tags: true,
       },
+      take: 5,
     });
 
     return documents.map((document) => new DocumentDto(document));

@@ -167,6 +167,20 @@ export class DocumentController {
     @Query('query') query: string,
   ): Promise<DocumentDto[]> {
     this.logger.debug(`query: ${query}`);
-    return this.documentService.queryVector(uid, query);
+    return this.documentService.findByEmbedding(uid, query);
+  }
+
+  @Get('search/text')
+  @ApiQuery({
+    name: 'query',
+    required: true,
+    type: String,
+    description: '텍스트 검색할 쿼리',
+  })
+  searchByQuery(
+    @GetUid() uid: string,
+    @Query('query') query: string,
+  ): Promise<DocumentDto[]> {
+    return this.documentService.findByFullText(uid, query);
   }
 }
