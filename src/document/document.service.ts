@@ -293,12 +293,17 @@ export class DocumentService {
       throw new UnauthorizedException(`Unauthorized`);
     }
 
-    await this.awsService.deleteObjectFromS3(document.docId);
-    await this.prisma.document.delete({
-      where: {
-        id: document.id,
-      },
-    });
+    try {
+      await this.prisma.document.delete({
+        where: {
+          id: document.id,
+        },
+      });
+      await this.awsService.deleteObjectFromS3(document.docId);
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException('Failed to delete document');
+    }
   }
 
   async uploadFiles(

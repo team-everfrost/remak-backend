@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
@@ -82,7 +86,7 @@ export class AwsService {
     this.logger.log(`Deleted ${docId} from S3. res: ${JSON.stringify(res)}`);
 
     if (res.$metadata.httpStatusCode !== 204) {
-      throw new Error('Failed to delete file from S3');
+      throw new InternalServerErrorException('Failed to delete file from S3');
     }
   }
 
