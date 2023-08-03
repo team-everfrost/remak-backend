@@ -1,0 +1,42 @@
+# Base image
+FROM postgres:latest
+
+
+# Install the necessary packages for building the extensions
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential postgresql-server-dev-all wget git libicu-dev ca-certificates && \
+    update-ca-certificates
+
+# Install locales package
+RUN apt-get install -y locales
+
+# Set the locale
+RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+
+ENV LANG en_US.utf8
+
+# Clone and install the pgvector extension
+RUN cd /tmp && \
+    git clone --branch v0.4.4 https://github.com/pgvector/pgvector.git && \
+    cd pgvector && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf pgvector
+
+# Download and install the pg_bigm extension
+RUN wget https://github.com/pgbigm/pg_bigm/releases/download/v1.2-20200228/pg_bigm-1.2-20200228.tar.gz && \
+    tar zxf pg_bigm-1.2-20200228.tar.gz && \
+    cd pg_bigm-1.2-20200228 && \
+    make USE_PGXS=1 && \
+    make USE_PGXS=1 install && \
+    cd .. && \
+    rm -rf pg_bigm-1.2-20200228 pg_bigm-1.2-20200228.tar.gz
+
+# Clean up unnecessary packages
+RUN apt-get remove -y build-essential postgresql-server-dev-all wget git libicu-dev && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+EXPOSE 5432
+CMD ["postgres"]
