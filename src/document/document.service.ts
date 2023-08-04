@@ -133,9 +133,18 @@ export class DocumentService {
             userId: user.id,
           },
           {
-            content: {
-              search: query,
-            },
+            OR: [
+              {
+                title: {
+                  contains: query,
+                },
+              },
+              {
+                content: {
+                  contains: query,
+                },
+              },
+            ],
           },
         ],
       },
