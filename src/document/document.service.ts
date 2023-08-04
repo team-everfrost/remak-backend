@@ -94,18 +94,17 @@ export class DocumentService {
     const vector: string = toSql(vec);
 
     const rawItems: any = await this.prisma.$queryRaw`
-    select d.*, array_agg(t.name) as tags, subquery.min_distance
-    from document as d
-    join ( select document_id, min(vector <#> ${vector}::vector) as min_distance
-          from embedded_text
-          where user_id = ${user.id}
-          group by document_id ) as subquery
-    on d.id = subquery.document_id
-    left join "_DocumentToTag" as dt on d.id = dt."A"
-    left join tag as t on dt."B" = t.id
-    group by d.id, subquery.min_distance
-    order by subquery.min_distance
-    limit 5;
+        select d.*, array_agg(t.name) as tags, subquery.min_distance
+        from document as d
+                 join ( select document_id, min(vector <#> ${vector}::vector) as min_distance
+                        from embedded_text
+                        where user_id = ${user.id}
+                        group by document_id ) as subquery on d.id = subquery.document_id
+                 left join "_DocumentToTag" as dt on d.id = dt."A"
+                 left join tag as t on dt."B" = t.id
+        group by d.id, subquery.min_distance
+        order by subquery.min_distance
+        limit 5;
     `;
 
     this.logger.debug(`rawItems: ${JSON.stringify(rawItems)}`);
@@ -241,6 +240,9 @@ export class DocumentService {
         tags: true,
       },
     });
+
+    // 스크랩 요청
+    await this.requestScrape(document.id);
 
     return new DocumentDto(document);
   }
@@ -386,8 +388,12 @@ export class DocumentService {
       : DocumentType.FILE;
   }
 
-  private async requestEmbed(documentId: bigint) {
+  private async requestEmbed(documentId: bigint): Promise<void> {
     await this.awsService.sendMessageToEmbedQueue(documentId);
+  }
+
+  private async requestScrape(documentId: bigint): Promise<void> {
+    await this.awsService.sendMessageToScrapeQueue(documentId);
   }
 
   private async getUserByUid(uid: string) {

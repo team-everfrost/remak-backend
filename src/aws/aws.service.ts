@@ -97,7 +97,20 @@ export class AwsService {
     });
     const res = await this.sqsClient.send(command);
     this.logger.log(
-      `Sent message to SQS. documentId: ${documentId} res: ${JSON.stringify(
+      `Sent message to Embed Queue. documentId: ${documentId} res: ${JSON.stringify(
+        res,
+      )}`,
+    );
+  }
+
+  async sendMessageToScrapeQueue(documentId: bigint): Promise<void> {
+    const command = new SendMessageCommand({
+      QueueUrl: this.configService.get('AWS_SQS_SCRAPE_QUEUE_URL'),
+      MessageBody: JSON.stringify({ documentId }),
+    });
+    const res = await this.sqsClient.send(command);
+    this.logger.log(
+      `Sent message to Scrape Queue. documentId: ${documentId} res: ${JSON.stringify(
         res,
       )}`,
     );
