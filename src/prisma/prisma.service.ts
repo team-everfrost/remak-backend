@@ -8,6 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { format } from 'sql-formatter';
 
+type QueryEventListener = (
+  eventType: 'query',
+  callback: (e: Prisma.QueryEvent) => void,
+) => void;
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
@@ -41,18 +46,7 @@ export class PrismaService
         },
       ],
     });
-    (
-      this.$on as (
-        eventType: 'query',
-        callback: (e: Prisma.QueryEvent) => void,
-      ) => void
-    )('query', (e: Prisma.QueryEvent) => {
-      this.logger.log(
-        `Query: \n${format(e.query, { language: 'postgresql' })}`,
-      );
-      this.logger.verbose(`Params: ${e.params}`);
-      this.logger.debug(`Duration: ${e.duration}ms`);
-    });
+    (this.$on as QueryEventListener)('query', (e) => this.logQuery(e));
   }
 
   async onModuleInit() {
@@ -61,5 +55,11 @@ export class PrismaService
 
   async onModuleDestroy() {
     await this.$disconnect();
+  }
+
+  private logQuery(e: Prisma.QueryEvent) {
+    this.logger.log(`Query: \n${format(e.query, { language: 'postgresql' })}`);
+    this.logger.verbose(`Params: ${e.params}`);
+    this.logger.debug(`Duration: ${e.duration}ms`);
   }
 }
