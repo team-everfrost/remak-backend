@@ -6,7 +6,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { DocumentType, Status } from '@prisma/client';
-import { toSql } from 'pgvector/utils';
 import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -91,7 +90,7 @@ export class DocumentService {
   async findByEmbedding(uid: string, query: string): Promise<DocumentDto[]> {
     const user = await this.getUserByUid(uid);
     const vec: number[] = await this.openAiService.getEmbedding(query);
-    const vector: string = toSql(vec);
+    const vector: string = JSON.stringify(vec);
 
     const rawItems: any = await this.prisma.$queryRaw`
         select d.*, array_agg(t.name) as tags, subquery.min_distance
