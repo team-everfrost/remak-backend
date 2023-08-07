@@ -67,21 +67,21 @@ async function createEmbeddedText(documentId: bigint, userId: bigint) {
   const vec = Array.from({ length: 1536 }, () => Math.random());
   await prisma.$executeRaw`insert into embedded_text (document_id, user_id, vector)
                            values (${documentId}, ${userId}, ${JSON.stringify(
-    vec,
-  )}::vector)`;
+                             vec,
+                           )}::vector)`;
 
   // 중복 문서를 검색하지 않는 기능을 테스트하기 위해 비슷한 벡터를 만듦
   // 비슷한 벡터를 만들기 위해 0.5보다 작은 값은 0.1을 더해줌
   await prisma.$executeRaw`insert into embedded_text (document_id, user_id, vector)
                            values (${documentId}, ${userId}, ${JSON.stringify(
-    vec.map((v) => (v < 0.5 ? v + 0.1 : v)),
-  )}::vector)`;
+                             vec.map((v) => (v < 0.5 ? v + 0.1 : v)),
+                           )}::vector)`;
 }
 
 async function main() {
   for (let i = 0; i < 10; i++) {
     try {
-      const user = await createUserWithDocumentsAndTags(i, 100);
+      const user = await createUserWithDocumentsAndTags(i, 500);
       const docs: Document[] = user.documents;
       await Promise.all(docs.map((doc) => createEmbeddedText(doc.id, user.id)));
     } catch (e) {
