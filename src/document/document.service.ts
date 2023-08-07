@@ -87,7 +87,12 @@ export class DocumentService {
     return new DocumentDto(document);
   }
 
-  async findByEmbedding(uid: string, query: string): Promise<DocumentDto[]> {
+  async findByEmbedding(
+    uid: string,
+    query: string,
+    limit: number,
+    offset: number,
+  ): Promise<DocumentDto[]> {
     const user = await this.getUserByUid(uid);
     const vec: number[] = await this.openAiService.getEmbedding(query);
     const vector: string = JSON.stringify(vec);
@@ -103,7 +108,8 @@ export class DocumentService {
                  left join tag as t on dt."B" = t.id
         group by d.id, subquery.min_distance
         order by subquery.min_distance
-        limit 5;
+        limit ${limit}
+        offset ${offset * limit};
     `;
 
     this.logger.debug(`rawItems: ${JSON.stringify(rawItems)}`);
@@ -122,13 +128,34 @@ export class DocumentService {
     }));
   }
 
-  async findByFullText(uid: string, query: string): Promise<DocumentDto[]> {
+  async findByFullText(
+    uid: string,
+    query: string,
+    cursor: Date,
+    docId: string,
+    take: number,
+  ): Promise<DocumentDto[]> {
     const user = await this.getUserByUid(uid);
     const documents = await this.prisma.document.findMany({
       where: {
         AND: [
           {
             userId: user.id,
+          },
+          {
+            OR: [
+              {
+                updatedAt: {
+                  lt: cursor,
+                },
+              },
+              {
+                updatedAt: cursor,
+                docId: {
+                  lt: docId,
+                },
+              },
+            ],
           },
           {
             OR: [
@@ -149,7 +176,12 @@ export class DocumentService {
       include: {
         tags: true,
       },
-      take: 5,
+      orderBy: [
+        {
+          updatedAt: 'desc',
+        },
+      ],
+      take,
     });
 
     return documents.map((document) => new DocumentDto(document));
