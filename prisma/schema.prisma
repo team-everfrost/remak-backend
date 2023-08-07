@@ -66,6 +66,7 @@ model Document {
   updatedAt    DateTime       @updatedAt @map("updated_at") // index?
   EmbeddedText EmbeddedText[]
 
+  @@index([updatedAt])
   @@map("document")
 }
 
