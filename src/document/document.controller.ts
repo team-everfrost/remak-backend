@@ -174,7 +174,7 @@ export class DocumentController {
     name: 'offset',
     required: false,
     type: Number,
-    description: '검색 결과의 시작 인덱스. 기본값은 0.',
+    description: '몇 번째 문서부터 검색 결과에 포함할지. 기본값은 0.',
   })
   searchByEmbedding(
     @GetUid() uid: string,

@@ -94,38 +94,17 @@ export class DocumentService {
     offset: number,
   ): Promise<DocumentDto[]> {
     const user = await this.getUserByUid(uid);
-    const vec: number[] = await this.openAiService.getEmbedding(query);
-    const vector: string = JSON.stringify(vec);
+    const vector = await this.getVectorFromQuery(query);
 
-    const rawItems: any = await this.prisma.$queryRaw`
-        select d.*, array_agg(t.name) as tags, subquery.min_distance
-        from document as d
-                 join ( select document_id, min(vector <#> ${vector}::vector) as min_distance
-                        from embedded_text
-                        where user_id = ${user.id}
-                        group by document_id ) as subquery on d.id = subquery.document_id
-                 left join "_DocumentToTag" as dt on d.id = dt."A"
-                 left join tag as t on dt."B" = t.id
-        group by d.id, subquery.min_distance
-        order by subquery.min_distance
-        limit ${limit}
-        offset ${offset * limit};
-    `;
-
+    const rawItems: any = await this.fetchRawItems(
+      user.id,
+      vector,
+      limit,
+      offset,
+    );
     this.logger.debug(`rawItems: ${JSON.stringify(rawItems)}`);
 
-    return rawItems.map((item) => ({
-      docId: item.doc_id,
-      title: item.title,
-      type: item.type,
-      url: item.url,
-      content: item.content,
-      summary: item.summary,
-      status: item.status,
-      createdAt: item.created_at,
-      updatedAt: item.updated_at,
-      tags: item.tags,
-    }));
+    return this.transformRawItemsToDto(rawItems);
   }
 
   async findByFullText(
@@ -411,6 +390,50 @@ export class DocumentService {
     }
 
     return await this.awsService.getSignedUrlFromS3(docId);
+  }
+
+  private async getVectorFromQuery(query: string): Promise<string> {
+    const vec: number[] = await this.openAiService.getEmbedding(query);
+    return JSON.stringify(vec);
+  }
+
+  private async fetchRawItems(
+    userId: bigint,
+    vector: string,
+    limit: number,
+    offset: number,
+  ) {
+    return this.prisma.$queryRaw`
+      select d.*, array_agg(t.name) as tags, subquery.min_distance
+      from document as d
+      join (
+        select document_id, min(vector <#> ${vector}::vector) as min_distance
+        from embedded_text
+        where user_id = ${userId}
+        group by document_id
+      ) as subquery on d.id = subquery.document_id
+      left join "_DocumentToTag" as dt on d.id = dt."A"
+      left join tag as t on dt."B" = t.id
+      group by d.id, subquery.min_distance
+      order by subquery.min_distance
+      limit ${limit}
+      offset ${offset};
+    `;
+  }
+
+  private transformRawItemsToDto(rawItems: any[]): DocumentDto[] {
+    return rawItems.map((item) => ({
+      docId: item.doc_id,
+      title: item.title,
+      type: item.type,
+      url: item.url,
+      content: item.content,
+      summary: item.summary,
+      status: item.status,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+      tags: item.tags,
+    }));
   }
 
   private getDocumentType(mimetype: string): DocumentType {
