@@ -51,6 +51,14 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
+
+    const indexExists: number = await this
+      .$executeRaw`SELECT 1 FROM pg_indexes WHERE indexname = 'document_gin';`;
+
+    if (!indexExists) {
+      await this
+        .$executeRaw`CREATE INDEX "document_gin" ON "document" USING gin ("content" gin_bigm_ops, "title" gin_bigm_ops);`;
+    }
   }
 
   async onModuleDestroy() {
