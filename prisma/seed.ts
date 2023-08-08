@@ -36,6 +36,17 @@ async function createUserWithDocumentsAndTags(index: number, numDocs: number) {
     },
   });
 
+  const createdTag = await prisma.tag.create({
+    data: {
+      name: `tag${index}`,
+      user: {
+        connect: {
+          id: createdUser.id,
+        },
+      },
+    },
+  });
+
   await Promise.all(
     createdUser.documents.map((doc) =>
       prisma.document.update({
@@ -44,16 +55,9 @@ async function createUserWithDocumentsAndTags(index: number, numDocs: number) {
         },
         data: {
           tags: {
-            create: [
-              {
-                name: `tag${index}`,
-                user: {
-                  connect: {
-                    id: createdUser.id,
-                  },
-                },
-              },
-            ],
+            connect: {
+              id: createdTag.id,
+            },
           },
         },
       }),
