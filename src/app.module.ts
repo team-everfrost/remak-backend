@@ -8,6 +8,7 @@ import { DocumentModule } from './document/document.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UserModule } from './user/user.module';
+import { TagModule } from './tag/tag.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UserModule } from './user/user.module';
     }),
     DocumentModule,
     UserModule,
+    TagModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
