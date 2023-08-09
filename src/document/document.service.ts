@@ -392,6 +392,69 @@ export class DocumentService {
     return await this.awsService.getSignedUrlFromS3(docId);
   }
 
+  async findByTag(
+    uid: string,
+    tagName: string,
+    cursor: Date,
+    docId: string,
+    take: number,
+  ): Promise<DocumentDto[]> {
+    const user = await this.getUserByUid(uid);
+
+    const tag = await this.prisma.tag.findFirst({
+      where: {
+        user: {
+          id: user.id,
+        },
+        name: tagName,
+      },
+    });
+
+    if (!tag) {
+      throw new NotFoundException(`Tag with name ${tagName} not found`);
+    }
+
+    const documents = await this.prisma.document.findMany({
+      where: {
+        AND: [
+          {
+            tags: {
+              some: {
+                id: tag.id,
+              },
+            },
+          },
+          {
+            OR: [
+              {
+                updatedAt: {
+                  lt: cursor,
+                },
+              },
+              {
+                updatedAt: cursor,
+                docId: {
+                  lt: docId,
+                },
+              },
+            ],
+          },
+        ],
+      },
+      include: {
+        tags: true,
+      },
+      orderBy: [
+        {
+          updatedAt: 'desc',
+        },
+      ],
+      take,
+    });
+
+    return documents.map((document) => new DocumentDto(document));
+  }
+
   private async getVectorFromQuery(query: string): Promise<string> {
     const vec: number[] = await this.openAiService.getEmbedding(query);
     return JSON.stringify(vec);
