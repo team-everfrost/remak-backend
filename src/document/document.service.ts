@@ -496,6 +496,7 @@ export class DocumentService {
       content: item.content,
       summary: item.summary,
       status: item.status,
+      thumbnailUrl: item.thumbnailUrl,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
       tags: item.tags,

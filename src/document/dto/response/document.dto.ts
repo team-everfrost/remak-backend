@@ -45,6 +45,12 @@ export class DocumentDto {
   status: Status;
 
   @ApiProperty({
+    description: '문서 썸네일 URL',
+    example: 'https://img.youtube.com/vi/YwC0m0XaD2E/0.jpg',
+  })
+  thumbnailUrl: string;
+
+  @ApiProperty({
     description: '문서 생성일',
     example: '2021-08-01T00:00:00.000Z',
   })
@@ -70,6 +76,7 @@ export class DocumentDto {
     this.content = document.content;
     this.summary = document.summary;
     this.status = document.status;
+    this.thumbnailUrl = document.thumbnailUrl;
     this.createdAt = document.createdAt;
     this.updatedAt = document.updatedAt;
     this.tags = document.tags.map((tag) => tag.name);

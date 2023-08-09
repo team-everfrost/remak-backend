@@ -18,6 +18,7 @@ async function createUserWithDocumentsAndTags(index: number, numDocs: number) {
     content: `This is user${index} document${i + 1}`,
     summary: `user${index} document${index}${i + 1} summary`,
     status: Status.EMBED_PENDING,
+    thumbnailUrl: `https://img.youtube.com/vi/YwC0m0XaD2E/0.jpg`,
   }));
 
   const createdUser = await prisma.user.create({

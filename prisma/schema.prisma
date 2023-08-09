@@ -48,14 +48,15 @@ model Social {
 }
 
 model Document {
-  id      BigInt       @id @default(autoincrement())
-  docId   String       @unique() @default(uuid()) @map("doc_id") // 외부 공개용
-  title   String?
-  type    DocumentType
-  url     String? // for web page
-  content String?
-  summary String?
-  status  Status // WEBPAGE: SCRPAE_PENDING, OTHERS: EMBED_PENDING
+  id           BigInt       @id @default(autoincrement())
+  docId        String       @unique() @default(uuid()) @map("doc_id") // 외부 공개용
+  title        String?
+  type         DocumentType
+  url          String? // for web page
+  content      String?
+  summary      String?
+  status       Status // WEBPAGE: SCRPAE_PENDING, OTHERS: EMBED_PENDING
+  thumbnailUrl String?      @map("thumbnail_url")
 
   userId BigInt @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

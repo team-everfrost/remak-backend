@@ -36,6 +36,7 @@ describe('DocumentService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     status: Status.EMBED_PENDING,
+    thumbnailUrl: 'test thumbnail url',
     userId: BigInt(2),
     summary: 'test summary',
     user: mockUser,
