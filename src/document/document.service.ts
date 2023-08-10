@@ -459,8 +459,27 @@ export class DocumentService {
   }
 
   private async getVectorFromQuery(query: string): Promise<string> {
-    const vec: number[] = await this.openAiService.getEmbedding(query);
-    return JSON.stringify(vec);
+    // DB에 저장된 vector가 있는지 확인
+    const item: { vector: string }[] = await this.prisma.$queryRaw`
+    select vector::text from embedded_query
+    where query = ${query}
+    `;
+
+    this.logger.debug(`item: ${JSON.stringify(item)}`);
+
+    // DB에 저장된 vector가 없으면 OpenAI API로 vector를 생성
+    if (item.length === 0) {
+      const vector: number[] = await this.openAiService.getEmbedding(query);
+      const vectorString = JSON.stringify(vector);
+      this.logger.debug(`vector: ${vectorString}`);
+      await this.prisma.$queryRaw`
+      insert into embedded_query (query, vector)
+      values (${query}, ${vector})
+      `;
+      return vectorString;
+    }
+
+    return item[0].vector;
   }
 
   private async fetchRawItems(

@@ -126,6 +126,17 @@ model Email {
   @@map("email")
 }
 
+// 검색어 임베딩 결과 저장 테이블
+model EmbeddedQuery {
+  id     BigInt                      @id @default(autoincrement())
+  query  String                      @unique
+  vector Unsupported("vector(1536)")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("embedded_query")
+}
+
 enum Role {
   BASIC
   PLUS
