@@ -9,9 +9,7 @@ export class UserService {
 
   async findOne(uid: string): Promise<UserDto> {
     const user = await this.prisma.user.findUnique({
-      where: {
-        uid,
-      },
+      where: { uid },
     });
 
     if (!user) {
@@ -23,9 +21,7 @@ export class UserService {
 
   async update(uid: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const user = await this.prisma.user.update({
-      where: {
-        uid,
-      },
+      where: { uid },
       data: updateUserDto,
     });
 

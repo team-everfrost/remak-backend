@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DocumentType, Status } from '@prisma/client';
+import { DocumentType, Status, User } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -36,30 +36,16 @@ export class DocumentService {
     const documents = await this.prisma.document.findMany({
       where: {
         userId: user.id,
-        // updatedAt < cursor OR (updatedAt = cursor AND document.docId < docId)
-        // updatedAt 인덱스 타게?
         OR: [
-          {
-            updatedAt: {
-              lt: cursor,
-            },
-          },
+          { updatedAt: { lt: cursor } },
           {
             updatedAt: cursor,
-            docId: {
-              lt: docId,
-            },
+            docId: { lt: docId },
           },
         ],
       },
-      include: {
-        tags: true,
-      },
-      orderBy: [
-        {
-          updatedAt: 'desc',
-        },
-      ],
+      include: { tags: true },
+      orderBy: [{ updatedAt: 'desc' }],
       take,
     });
     return documents.map((document) => new DocumentDto(document));
@@ -67,9 +53,7 @@ export class DocumentService {
 
   async findOne(uid: string, docId: string): Promise<DocumentDto> {
     const document = await this.prisma.document.findUnique({
-      where: {
-        docId,
-      },
+      where: { docId },
       include: {
         tags: true,
         user: true,
@@ -118,48 +102,26 @@ export class DocumentService {
     const documents = await this.prisma.document.findMany({
       where: {
         AND: [
-          {
-            userId: user.id,
-          },
+          { userId: user.id },
           {
             OR: [
-              {
-                updatedAt: {
-                  lt: cursor,
-                },
-              },
+              { updatedAt: { lt: cursor } },
               {
                 updatedAt: cursor,
-                docId: {
-                  lt: docId,
-                },
+                docId: { lt: docId },
               },
             ],
           },
           {
             OR: [
-              {
-                title: {
-                  contains: query,
-                },
-              },
-              {
-                content: {
-                  contains: query,
-                },
-              },
+              { title: { contains: query } },
+              { content: { contains: query } },
             ],
           },
         ],
       },
-      include: {
-        tags: true,
-      },
-      orderBy: [
-        {
-          updatedAt: 'desc',
-        },
-      ],
+      include: { tags: true },
+      orderBy: [{ updatedAt: 'desc' }],
       take,
     });
 
@@ -174,15 +136,9 @@ export class DocumentService {
         ...memoDto,
         type: DocumentType.MEMO,
         status: Status.EMBED_PENDING,
-        user: {
-          connect: {
-            id: user.id,
-          },
-        },
+        user: { connect: { id: user.id } },
       },
-      include: {
-        tags: true,
-      },
+      include: { tags: true },
     });
 
     // 임베딩 요청
@@ -197,9 +153,7 @@ export class DocumentService {
     memoDto: MemoDto,
   ): Promise<DocumentDto> {
     const document = await this.prisma.document.findUnique({
-      where: {
-        docId,
-      },
+      where: { docId },
       include: {
         tags: true,
         user: true,
@@ -215,15 +169,9 @@ export class DocumentService {
     }
 
     const updatedDocument = await this.prisma.document.update({
-      where: {
-        id: document.id,
-      },
-      data: {
-        ...memoDto,
-      },
-      include: {
-        tags: true,
-      },
+      where: { id: document.id },
+      data: { ...memoDto },
+      include: { tags: true },
     });
 
     // 임베딩 요청
@@ -243,15 +191,9 @@ export class DocumentService {
         ...webPageDto,
         type: DocumentType.WEBPAGE,
         status: Status.SCRAPE_PENDING, // 웹페이지는 스크랩부터
-        user: {
-          connect: {
-            id: user.id,
-          },
-        },
+        user: { connect: { id: user.id } },
       },
-      include: {
-        tags: true,
-      },
+      include: { tags: true },
     });
 
     // 스크랩 요청
@@ -266,9 +208,7 @@ export class DocumentService {
     webPageDto: WebpageDto,
   ): Promise<DocumentDto> {
     const document = await this.prisma.document.findUnique({
-      where: {
-        docId,
-      },
+      where: { docId },
       include: {
         tags: true,
         user: true,
@@ -284,15 +224,9 @@ export class DocumentService {
     }
 
     const updatedDocument = await this.prisma.document.update({
-      where: {
-        id: document.id,
-      },
-      data: {
-        ...webPageDto,
-      },
-      include: {
-        tags: true,
-      },
+      where: { id: document.id },
+      data: { ...webPageDto },
+      include: { tags: true },
     });
 
     return new DocumentDto(updatedDocument);
@@ -300,9 +234,7 @@ export class DocumentService {
 
   async deleteOne(uid: string, docId: string): Promise<void> {
     const document = await this.prisma.document.findUnique({
-      where: {
-        docId,
-      },
+      where: { docId },
       include: {
         tags: true,
         user: true,
@@ -319,9 +251,7 @@ export class DocumentService {
 
     try {
       await this.prisma.document.delete({
-        where: {
-          id: document.id,
-        },
+        where: { id: document.id },
       });
       await this.awsService.deleteObjectFromS3(document.docId);
     } catch (error) {
@@ -354,16 +284,10 @@ export class DocumentService {
             docId, // S3 object key
             type: documentType,
             status: Status.EMBED_PENDING,
-            user: {
-              connect: {
-                id: user.id,
-              },
-            },
+            user: { connect: { id: user.id } },
             title: file.originalname,
           },
-          include: {
-            tags: true,
-          },
+          include: { tags: true },
         });
         documentDtos.push(new DocumentDto(document));
       } catch (error) {
@@ -376,12 +300,8 @@ export class DocumentService {
 
   async downloadFile(uid: string, docId: string): Promise<string> {
     const document = await this.prisma.document.findUnique({
-      where: {
-        docId,
-      },
-      include: {
-        user: true,
-      },
+      where: { docId },
+      include: { user: true },
     });
 
     if (!document) {
@@ -406,9 +326,7 @@ export class DocumentService {
 
     const tag = await this.prisma.tag.findFirst({
       where: {
-        user: {
-          id: user.id,
-        },
+        user: { id: user.id },
         name: tagName,
       },
     });
@@ -421,37 +339,21 @@ export class DocumentService {
       where: {
         AND: [
           {
-            tags: {
-              some: {
-                id: tag.id,
-              },
-            },
+            tags: { some: { id: tag.id } },
           },
           {
             OR: [
-              {
-                updatedAt: {
-                  lt: cursor,
-                },
-              },
+              { updatedAt: { lt: cursor } },
               {
                 updatedAt: cursor,
-                docId: {
-                  lt: docId,
-                },
+                docId: { lt: docId },
               },
             ],
           },
         ],
       },
-      include: {
-        tags: true,
-      },
-      orderBy: [
-        {
-          updatedAt: 'desc',
-        },
-      ],
+      include: { tags: true },
+      orderBy: [{ updatedAt: 'desc' }],
       take,
     });
 
@@ -461,8 +363,8 @@ export class DocumentService {
   private async getVectorFromQuery(query: string): Promise<string> {
     // DB에 저장된 vector가 있는지 확인
     const item: { vector: string }[] = await this.prisma.$queryRaw`
-    select vector::text from embedded_query
-    where query = ${query}
+      select vector::text from embedded_query
+      where query = ${query}
     `;
 
     this.logger.debug(`item: ${JSON.stringify(item)}`);
@@ -473,8 +375,8 @@ export class DocumentService {
       const vectorString = JSON.stringify(vector);
       this.logger.debug(`vector: ${vectorString}`);
       await this.prisma.$queryRaw`
-      insert into embedded_query (query, vector)
-      values (${query}, ${vector})
+        insert into embedded_query (query, vector)
+        values (${query}, ${vector})
       `;
       return vectorString;
     }
@@ -536,11 +438,9 @@ export class DocumentService {
     await this.awsService.sendMessageToScrapeQueue(documentId);
   }
 
-  private async getUserByUid(uid: string) {
+  private async getUserByUid(uid: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
-      where: {
-        uid,
-      },
+      where: { uid },
     });
 
     if (!user) {
