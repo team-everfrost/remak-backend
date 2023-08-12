@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DocumentType, Status, User } from '@prisma/client';
+import { DocumentType, Prisma, Status, Tag, User } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -236,8 +236,8 @@ export class DocumentService {
     const document = await this.prisma.document.findUnique({
       where: { docId },
       include: {
-        tags: true,
         user: true,
+        tags: true,
       },
     });
 
@@ -249,10 +249,30 @@ export class DocumentService {
       throw new UnauthorizedException(`Unauthorized`);
     }
 
+    const tagIds = document.tags.map((tag) => tag.id);
+
+    // 방금 지운 문서가 유일한 문서인 태그를 찾음
+    const deleteTags: Tag[] = await this.prisma.$queryRaw`
+        select t.*
+        from tag as t
+                 join "_DocumentToTag" as dt on t.id = dt."B"
+        where dt."B" in (${Prisma.join(tagIds)})
+        group by t.id
+        having count(dt."A") = 1
+    `;
+
+    this.logger.log(`deleteTags: ${JSON.stringify(deleteTags)}`);
+
     try {
-      await this.prisma.document.delete({
-        where: { id: document.id },
-      });
+      await this.prisma.$transaction([
+        this.prisma.document.delete({
+          where: { id: document.id },
+        }),
+        this.prisma.tag.deleteMany({
+          // 방금 지운 문서가 유일한 문서인 태그는 삭제
+          where: { id: { in: deleteTags.map((tag) => tag.id) } },
+        }),
+      ]);
       await this.awsService.deleteObjectFromS3(document.docId);
     } catch (error) {
       this.logger.error(error);
@@ -363,8 +383,9 @@ export class DocumentService {
   private async getVectorFromQuery(query: string): Promise<string> {
     // DB에 저장된 vector가 있는지 확인
     const item: { vector: string }[] = await this.prisma.$queryRaw`
-      select vector::text from embedded_query
-      where query = ${query}
+        select vector::text
+        from embedded_query
+        where query = ${query}
     `;
 
     this.logger.debug(`item: ${JSON.stringify(item)}`);
@@ -375,8 +396,8 @@ export class DocumentService {
       const vectorString = JSON.stringify(vector);
       this.logger.debug(`vector: ${vectorString}`);
       await this.prisma.$queryRaw`
-        insert into embedded_query (query, vector)
-        values (${query}, ${vector})
+          insert into embedded_query (query, vector)
+          values (${query}, ${vector})
       `;
       return vectorString;
     }
@@ -391,20 +412,17 @@ export class DocumentService {
     offset: number,
   ) {
     return this.prisma.$queryRaw`
-      select d.*, array_agg(t.name) as tags, subquery.min_distance
-      from document as d
-      join (
-        select document_id, min(vector <#> ${vector}::vector) as min_distance
-        from embedded_text
-        where user_id = ${userId}
-        group by document_id
-      ) as subquery on d.id = subquery.document_id
-      left join "_DocumentToTag" as dt on d.id = dt."A"
-      left join tag as t on dt."B" = t.id
-      group by d.id, subquery.min_distance
-      order by subquery.min_distance
-      limit ${limit}
-      offset ${offset};
+        select d.*, array_agg(t.name) as tags, subquery.min_distance
+        from document as d
+                 join ( select document_id, min(vector <#> ${vector}::vector) as min_distance
+                        from embedded_text
+                        where user_id = ${userId}
+                        group by document_id ) as subquery on d.id = subquery.document_id
+                 left join "_DocumentToTag" as dt on d.id = dt."A"
+                 left join tag as t on dt."B" = t.id
+        group by d.id, subquery.min_distance
+        order by subquery.min_distance
+        limit ${limit} offset ${offset};
     `;
   }
 
