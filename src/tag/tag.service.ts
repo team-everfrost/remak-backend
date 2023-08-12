@@ -15,7 +15,7 @@ export class TagService {
         _count: { select: { documents: true } },
       },
       where: { user: { uid } },
-      orderBy: { documents: { _count: 'desc' } },
+      orderBy: [{ documents: { _count: 'desc' } }, { name: 'asc' }],
       take: limit,
       skip: offset,
     });
