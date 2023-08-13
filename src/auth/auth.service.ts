@@ -1,4 +1,3 @@
-import { MailerService } from '@nestjs-modules/mailer';
 import {
   ConflictException,
   ForbiddenException,
@@ -9,13 +8,14 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
+import { randomInt } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/request/auth.dto';
 import { EmailDto } from './dto/request/email.dto';
 import { SignupDto } from './dto/request/signup.dto';
 import { VerifyCodeDto } from './dto/request/verify-code.dto';
 import { Token } from './dto/response/token.dto';
+import { AwsService } from '../aws/aws.service';
 
 @Injectable()
 export class AuthService {
@@ -25,14 +25,20 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private mailerService: MailerService,
+    private awsService: AwsService,
   ) {}
 
   async signupLocal(signupDto: SignupDto): Promise<Token> {
     const { email, password } = signupDto;
 
-    if (await this.prisma.user.findUnique({ where: { email } })) {
+    const userData = await this.prisma.user.findUnique({ where: { email } });
+    if (userData) {
       throw new ConflictException('email already exists');
+    }
+
+    const emailData = await this.prisma.email.findUnique({ where: { email } });
+    if (!emailData || !emailData.verified) {
+      throw new ForbiddenException('Access denied');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -68,18 +74,17 @@ export class AuthService {
   async sendSignupCode(emailDto: EmailDto): Promise<void> {
     const { email } = emailDto;
 
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (user) throw new ConflictException('email already exists');
+    const emailData = await this.prisma.email.findUnique({
+      where: { email },
+    });
+    if (emailData?.verified) {
+      throw new ForbiddenException('email already verified');
+    }
 
-    const signupCode = this.getSignupCode(3);
+    const signupCode = this.getSignupCode();
     this.logger.debug(`signupCode: ${signupCode}`);
 
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Remak 회원가입 코드',
-      html: `<b>회원가입 코드는 ${signupCode} 입니다</b>`,
-    });
-
+    await this.awsService.sendSignupEmail(email, signupCode);
     await this.prisma.email.upsert({
       where: { email },
       update: { signupCode },
@@ -97,15 +102,18 @@ export class AuthService {
       where: { email },
     });
 
-    if (!emailData) throw new ForbiddenException('Access denied');
-    if (emailData.signupCode !== signupCode)
-      throw new ForbiddenException('Access denied');
+    if (!emailData) {
+      throw new ForbiddenException('No such email');
+    }
+    if (emailData.signupCode !== signupCode) {
+      throw new ForbiddenException('Invalid signup code');
+    }
 
     // 인증 성공. 이후 signupLocal() 호출
     this.logger.debug(`signupCode verified: ${email}`);
     await this.prisma.email.update({
       where: { email },
-      data: { signupCode: '', verified: true },
+      data: { verified: true },
     });
   }
 
@@ -127,8 +135,7 @@ export class AuthService {
     return { accessToken };
   }
 
-  getSignupCode(bytes: number): string {
-    // bytes * 2 길이의 랜덤 문자열 생성
-    return crypto.randomBytes(bytes).toString('hex');
+  getSignupCode(): string {
+    return randomInt(10 ** 5, 10 ** 6).toString();
   }
 }
