@@ -4,8 +4,8 @@ import { Configuration, OpenAIApi } from 'openai';
 
 @Injectable()
 export class OpenAiService {
-  private readonly openAiConfig;
-  private readonly openAi;
+  private readonly openAiConfig: Configuration;
+  private readonly openAi: OpenAIApi;
   private logger = new Logger(OpenAiService.name);
 
   constructor(private readonly configService: ConfigService) {
