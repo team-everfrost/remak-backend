@@ -252,17 +252,7 @@ export class DocumentService {
     const tagIds = document.tags.map((tag) => tag.id);
 
     // 방금 지운 문서가 유일한 문서인 태그를 찾음
-    const deleteTags: Tag[] =
-      tagIds.length === 0
-        ? []
-        : await this.prisma.$queryRaw`
-          select t.*
-          from tag as t
-                   join "_DocumentToTag" as dt on t.id = dt."B"
-          where dt."B" in (${Prisma.join(tagIds)})
-          group by t.id
-          having count(dt."A") = 1
-      `;
+    const deleteTags: Tag[] = await this.getDeleteTags(tagIds);
 
     this.logger.log(`deleteTags: ${JSON.stringify(deleteTags)}`);
 
@@ -276,7 +266,13 @@ export class DocumentService {
           where: { id: { in: deleteTags.map((tag) => tag.id) } },
         }),
       ]);
-      await this.awsService.deleteObjectFromS3(document.docId);
+      // S3에서 파일 삭제
+      if (
+        document.type === DocumentType.FILE ||
+        document.type === DocumentType.IMAGE
+      ) {
+        await this.awsService.deleteObjectFromS3(document.docId);
+      }
     } catch (error) {
       this.logger.error(error);
       throw new InternalServerErrorException('Failed to delete document');
@@ -381,6 +377,19 @@ export class DocumentService {
     });
 
     return documents.map((document) => new DocumentDto(document));
+  }
+
+  private async getDeleteTags(tagIds: bigint[]): Promise<Tag[]> {
+    return tagIds.length === 0
+      ? []
+      : await this.prisma.$queryRaw`
+                select t.*
+                from tag as t
+                         join "_DocumentToTag" as dt on t.id = dt."B"
+                where dt."B" in (${Prisma.join(tagIds)})
+                group by t.id
+                having count(dt."A") = 1
+      `;
   }
 
   private async getVectorFromQuery(query: string): Promise<string> {

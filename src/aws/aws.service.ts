@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
@@ -64,17 +60,17 @@ export class AwsService {
   }
 
   async deleteObjectFromS3(docId: string): Promise<void> {
-    const res = await this.s3Client.send(
-      new DeleteObjectCommand({
-        Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
-        Key: docId,
-      }),
-    );
-
-    this.logger.log(`Deleted ${docId} from S3. res: ${JSON.stringify(res)}`);
-
-    if (res.$metadata.httpStatusCode !== 204) {
-      throw new InternalServerErrorException('Failed to delete file from S3');
+    try {
+      const res = await this.s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+          Key: docId,
+        }),
+      );
+      this.logger.log(`Deleted ${docId} from S3. res: ${JSON.stringify(res)}`);
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
     }
   }
 
