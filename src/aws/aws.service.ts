@@ -12,30 +12,18 @@ import {
 } from '@aws-sdk/client-s3';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
 
 @Injectable()
 export class AwsService {
   private readonly logger: Logger = new Logger(AwsService.name);
-  private readonly s3Client: S3Client = new S3Client({
+  private readonly config = {
     region: this.configService.get<string>('AWS_REGION'),
-    credentials:
-      this.configService.get<string>('NODE_ENV') === 'development'
-        ? {
-            accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY'),
-            secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
-          }
-        : undefined,
-  });
-  private readonly sqsClient: SQSClient = new SQSClient({
-    region: this.configService.get<string>('AWS_REGION'),
-    credentials:
-      this.configService.get<string>('NODE_ENV') === 'development'
-        ? {
-            accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY'),
-            secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
-          }
-        : undefined,
-  });
+    credentials: this.getCredential(),
+  };
+  private readonly s3Client: S3Client = new S3Client(this.config);
+  private readonly sqsClient: SQSClient = new SQSClient(this.config);
+  private readonly sesClient: SESClient = new SESClient(this.config);
 
   constructor(private configService: ConfigService) {}
 
@@ -114,5 +102,57 @@ export class AwsService {
         res,
       )}`,
     );
+  }
+
+  async sendSignupEmail(toAddress: string, signupCode: string): Promise<void> {
+    const fromAddress = this.configService.get<string>('AWS_SES_FROM_ADDRESS');
+    const command = this.createSignupSendEmailCommand(
+      toAddress,
+      fromAddress,
+      signupCode,
+    );
+    try {
+      const res = this.sesClient.send(command);
+      this.logger.log(
+        `Sent signup email to ${toAddress}. res: ${JSON.stringify(res)}`,
+      );
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
+  }
+
+  private createSignupSendEmailCommand(
+    toAddress: string,
+    fromAddress: string,
+    signupCode: string,
+  ): SendEmailCommand {
+    return new SendEmailCommand({
+      Destination: {
+        ToAddresses: [toAddress],
+      },
+      Message: {
+        Subject: {
+          Charset: 'UTF-8',
+          Data: 'Remak 회원가입 코드',
+        },
+        Body: {
+          Html: {
+            Charset: 'UTF-8',
+            Data: `<b>회원가입 코드는 ${signupCode} 입니다</b>`,
+          },
+        },
+      },
+      Source: fromAddress,
+    });
+  }
+
+  private getCredential() {
+    return this.configService.get<string>('NODE_ENV') === 'development'
+      ? {
+          accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY'),
+          secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
+        }
+      : undefined;
   }
 }
