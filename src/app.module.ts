@@ -1,6 +1,5 @@
-import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -15,24 +14,6 @@ import { TagModule } from './tag/tag.module';
     PrismaModule,
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('MAIL_HOST'),
-          port: configService.get<number>('MAIL_PORT'),
-          secure: false,
-          auth: {
-            user: configService.get<string>('MAIL_USER'),
-            pass: configService.get<string>('MAIL_PASS'),
-          },
-        },
-        defaults: {
-          from: configService.get<string>('MAIL_FROM'),
-        },
-      }),
-    }),
     DocumentModule,
     UserModule,
     TagModule,
