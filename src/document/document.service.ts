@@ -252,14 +252,17 @@ export class DocumentService {
     const tagIds = document.tags.map((tag) => tag.id);
 
     // 방금 지운 문서가 유일한 문서인 태그를 찾음
-    const deleteTags: Tag[] = await this.prisma.$queryRaw`
-        select t.*
-        from tag as t
-                 join "_DocumentToTag" as dt on t.id = dt."B"
-        where dt."B" in (${Prisma.join(tagIds)})
-        group by t.id
-        having count(dt."A") = 1
-    `;
+    const deleteTags: Tag[] =
+      tagIds.length === 0
+        ? []
+        : await this.prisma.$queryRaw`
+          select t.*
+          from tag as t
+                   join "_DocumentToTag" as dt on t.id = dt."B"
+          where dt."B" in (${Prisma.join(tagIds)})
+          group by t.id
+          having count(dt."A") = 1
+      `;
 
     this.logger.log(`deleteTags: ${JSON.stringify(deleteTags)}`);
 
