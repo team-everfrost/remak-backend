@@ -33,12 +33,12 @@ export class AuthService {
 
     const userData = await this.prisma.user.findUnique({ where: { email } });
     if (userData) {
-      throw new ConflictException('email already exists');
+      throw new ConflictException('Email already exists');
     }
 
     const emailData = await this.prisma.email.findUnique({ where: { email } });
     if (!emailData || !emailData.verified) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException('Email not verified');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -74,12 +74,7 @@ export class AuthService {
   async sendSignupCode(emailDto: EmailDto): Promise<void> {
     const { email } = emailDto;
 
-    const emailData = await this.prisma.email.findUnique({
-      where: { email },
-    });
-    if (emailData?.verified) {
-      throw new ForbiddenException('email already verified');
-    }
+    // TODO: rate limit
 
     const signupCode = this.getSignupCode();
     this.logger.debug(`signupCode: ${signupCode}`);
@@ -105,6 +100,7 @@ export class AuthService {
     if (!emailData) {
       throw new ForbiddenException('No such email');
     }
+
     if (emailData.signupCode !== signupCode) {
       throw new ForbiddenException('Invalid signup code');
     }
