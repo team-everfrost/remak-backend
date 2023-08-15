@@ -308,6 +308,7 @@ export class DocumentService {
           },
           include: { tags: true },
         });
+        await this.requestEmbed(document.id);
         documentDtos.push(new DocumentDto(document));
       } catch (error) {
         this.logger.error(error);
