@@ -46,4 +46,10 @@ export class AuthController {
   verifySignupCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<void> {
     return this.authService.verifySignupCode(verifyCodeDto);
   }
+
+  @Post('/check-email')
+  @HttpCode(HttpStatus.OK)
+  checkEmail(@Body() emailDto: EmailDto): Promise<void> {
+    return this.authService.checkEmail(emailDto);
+  }
 }

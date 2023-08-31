@@ -113,6 +113,18 @@ export class AuthService {
     });
   }
 
+  async checkEmail(emailDto: EmailDto) {
+    const { email } = emailDto;
+
+    const userEmail = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!userEmail) {
+      throw new ForbiddenException('No such email');
+    }
+  }
+
   async getToken(user: User): Promise<Token> {
     const accessToken = await this.jwtService.signAsync(
       {
