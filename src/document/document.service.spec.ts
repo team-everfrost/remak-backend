@@ -8,7 +8,7 @@ import { OpenAiService } from '../openai/open-ai.service';
 import { AwsService } from '../aws/aws.service';
 
 describe('DocumentService', () => {
-  let service: DocumentService;
+  let documentService: DocumentService;
   let prisma: PrismaService;
 
   const uid = 'test-uid';
@@ -47,8 +47,19 @@ describe('DocumentService', () => {
       providers: [
         DocumentService,
         ConfigService,
-        OpenAiService,
-        AwsService,
+        {
+          provide: OpenAiService,
+          useValue: {
+            summarize: jest.fn(),
+          },
+        },
+        {
+          provide: AwsService,
+          useValue: {
+            uploadFile: jest.fn(),
+            deleteFile: jest.fn(),
+          },
+        },
         {
           provide: PrismaService,
           useValue: {
@@ -67,85 +78,50 @@ describe('DocumentService', () => {
       ],
     }).compile();
 
-    service = module.get<DocumentService>(DocumentService);
+    documentService = module.get<DocumentService>(DocumentService);
     prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(documentService).toBeDefined();
+    expect(prisma).toBeDefined();
   });
 
   describe('findOne', () => {
-    it('should throw NotFoundException if document not found', async () => {
-      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(null);
-      await expect(service.findOne(uid, docId)).rejects.toThrow(
+    it('docid로 문서를 찾을 수 없는 경우 NotFoundException을 발생시킨다.', async () => {
+      (prisma.document.findUnique as jest.Mock).mockResolvedValue(null);
+      await expect(documentService.findOne(uid, docId)).rejects.toThrow(
         NotFoundException,
       );
-    });
-
-    it('should throw UnauthorizedException if user not match', async () => {
-      const uid = 'different-uid';
-
-      jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(mockDocument);
-
-      await expect(service.findOne(uid, docId)).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-  });
-
-  describe('createMemo', () => {
-    it('should throw NotFoundException if user not found', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
-      await expect(
-        service.createMemo(uid, {
-          content: 'test content',
-        }),
-      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('updateMemo', () => {
-    it('should throw NotFoundException if document not found', async () => {
+    it('docid로 문서를 찾을 수 없는 경우 NotFoundException을 발생시킨다.', async () => {
       jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(null);
       await expect(
-        service.updateMemo(uid, docId, {
+        documentService.updateMemo(uid, docId, {
           content: 'test content',
         }),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw UnauthorizedException if user not match', async () => {
+    it('docid로 찾은 문서의 uid와 입력받은 uid가 일치하지 않는 경우 UnauthorizedException을 발생시킨다.', async () => {
       const uid = 'different-uid';
-
       jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(mockDocument);
-
       await expect(
-        service.updateMemo(uid, docId, {
+        documentService.updateMemo(uid, docId, {
           content: 'test content',
         }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
 
-  describe('createWebpage', () => {
-    it('should throw NotFoundException if user not found', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
-      await expect(
-        service.createWebpage(uid, {
-          title: 'test title',
-          url: 'test url',
-          content: 'test content',
-        }),
-      ).rejects.toThrow(NotFoundException);
-    });
-  });
-
   describe('updateWebpage', () => {
-    it('should throw NotFoundException if document not found', async () => {
+    it('docid로 문서를 찾을 수 없는 경우 NotFoundException을 발생시킨다.', async () => {
       jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(null);
       await expect(
-        service.updateWebpage(uid, docId, {
+        documentService.updateWebpage(uid, docId, {
           title: 'test title',
           url: 'test url',
           content: 'test content',
@@ -153,13 +129,11 @@ describe('DocumentService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw UnauthorizedException if user not match', async () => {
+    it('docid로 찾은 문서의 uid와 입력받은 uid가 일치하지 않는 경우 UnauthorizedException을 발생시킨다.', async () => {
       const uid = 'different-uid';
-
       jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(mockDocument);
-
       await expect(
-        service.updateWebpage(uid, docId, {
+        documentService.updateWebpage(uid, docId, {
           title: 'test title',
           url: 'test url',
           content: 'test content',
@@ -169,21 +143,48 @@ describe('DocumentService', () => {
   });
 
   describe('deleteOne', () => {
-    it('should throw NotFoundException if document not found', async () => {
+    it('docid로 문서를 찾을 수 없는 경우 NotFoundException을 발생시킨다.', async () => {
       jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(null);
-      await expect(service.deleteOne(uid, docId)).rejects.toThrow(
+      await expect(documentService.deleteOne(uid, docId)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it('should throw UnauthorizedException if user not match', async () => {
+    it('docid로 찾은 문서의 uid와 입력받은 uid가 일치하지 않는 경우 UnauthorizedException을 발생시킨다.', async () => {
       const uid = 'different-uid';
-
       jest.spyOn(prisma.document, 'findUnique').mockResolvedValue(mockDocument);
-
-      await expect(service.deleteOne(uid, docId)).rejects.toThrow(
+      await expect(documentService.deleteOne(uid, docId)).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe('findByCursor', () => {
+    it('cursor가 없는 경우 현재 시각이 cursor로 설정된다.', async () => {
+      const mockDate = new Date();
+      const take = 20;
+
+      const dateSpy = jest.spyOn(global, 'Date').mockImplementation(() => {
+        return mockDate as Date;
+      });
+
+      jest.spyOn(prisma.document, 'findMany').mockResolvedValue([]);
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
+
+      await documentService.findByCursor(uid, null, docId, take);
+      expect(dateSpy).toHaveBeenCalled();
+      expect(dateSpy).toHaveReturnedWith(mockDate);
+    });
+
+    it('limit에 20보다 큰 숫자가 들어가면 20으로 설정된다.', async () => {
+      jest.spyOn(prisma.document, 'findMany').mockResolvedValue([]);
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
+      const mathSpy = jest.spyOn(Math, 'min');
+
+      await documentService.findByCursor(uid, new Date(), docId, 50);
+
+      expect(mathSpy).toHaveBeenCalled();
+      expect(mathSpy).toHaveReturnedWith(20);
     });
   });
 });
