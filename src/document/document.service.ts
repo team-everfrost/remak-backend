@@ -30,6 +30,8 @@ export class DocumentService {
     docId: string,
     take: number,
   ): Promise<DocumentDto[]> {
+    cursor = cursor || new Date();
+    take = Math.min(take, 20);
     const user = await this.getUserByUid(uid);
 
     // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
@@ -53,7 +55,7 @@ export class DocumentService {
 
   async findOne(uid: string, docId: string): Promise<DocumentDto> {
     const document = await this.prisma.document.findUnique({
-      where: { docId },
+      where: { docId, user: { uid } },
       include: {
         tags: true,
         user: true,
@@ -61,11 +63,9 @@ export class DocumentService {
     });
 
     if (!document) {
-      throw new NotFoundException(`Document with docId ${docId} not found`);
-    }
-
-    if (document.user.uid !== uid) {
-      throw new UnauthorizedException(`Unauthorized`);
+      throw new NotFoundException(
+        `Document with docId ${docId} and uid ${uid} not found`,
+      );
     }
 
     return new DocumentDto(document);
@@ -79,16 +79,13 @@ export class DocumentService {
   ): Promise<DocumentDto[]> {
     const user = await this.getUserByUid(uid);
     const vector = await this.getVectorFromQuery(query);
-
-    const rawItems: any = await this.fetchRawItems(
+    const documentsWithVector: any = await this.fetchDocumentsWithVector(
       user.id,
       vector,
       limit,
       offset,
     );
-    this.logger.debug(`rawItems: ${JSON.stringify(rawItems)}`);
-
-    return this.transformRawItemsToDto(rawItems);
+    return this.transformDocumentsWithVectorToDto(documentsWithVector);
   }
 
   async findByFullText(
@@ -98,6 +95,9 @@ export class DocumentService {
     docId: string,
     take: number,
   ): Promise<DocumentDto[]> {
+    cursor = cursor ? cursor : new Date();
+    take = take > 20 ? 20 : take;
+
     const user = await this.getUserByUid(uid);
     const documents = await this.prisma.document.findMany({
       where: {
@@ -342,6 +342,9 @@ export class DocumentService {
     docId: string,
     take: number,
   ): Promise<DocumentDto[]> {
+    cursor = cursor || new Date();
+    take = Math.min(take, 20);
+
     const user = await this.getUserByUid(uid);
 
     const tag = await this.prisma.tag.findFirst({
@@ -418,7 +421,7 @@ export class DocumentService {
     return item[0].vector;
   }
 
-  private async fetchRawItems(
+  private async fetchDocumentsWithVector(
     userId: bigint,
     vector: string,
     limit: number,
@@ -439,7 +442,7 @@ export class DocumentService {
     `;
   }
 
-  private transformRawItemsToDto(rawItems: any[]): DocumentDto[] {
+  private transformDocumentsWithVectorToDto(rawItems: any[]): DocumentDto[] {
     return rawItems.map((item) => ({
       docId: item.doc_id,
       title: item.title,

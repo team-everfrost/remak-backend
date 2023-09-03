@@ -135,10 +135,6 @@ export class DocumentController {
     docId?: string,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ): Promise<DocumentDto[]> {
-    this.logger.debug(cursor);
-    this.logger.debug(docId);
-    cursor = cursor ? cursor : new Date();
-    limit = limit > 20 ? 20 : limit;
     return this.documentService.findByCursor(uid, cursor, docId, limit);
   }
 
@@ -191,8 +187,6 @@ export class DocumentController {
     docId?: string,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ): Promise<DocumentDto[]> {
-    cursor = cursor ? cursor : new Date();
-    limit = limit > 20 ? 20 : limit;
     return this.documentService.findByTag(uid, tagName, cursor, docId, limit);
   }
 
@@ -274,8 +268,6 @@ export class DocumentController {
     docId?: string,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
   ): Promise<DocumentDto[]> {
-    cursor = cursor ? cursor : new Date();
-    limit = limit > 20 ? 20 : limit;
     return this.documentService.findByFullText(
       uid,
       query,
