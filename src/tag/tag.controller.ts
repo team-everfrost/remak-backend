@@ -23,13 +23,13 @@ export class TagController {
     name: 'limit',
     required: false,
     type: Number,
-    description: '한 번에 받을 문서의 개수. 최대 20개까지 가능. 기본값은 20.',
+    description: '한 번에 받을 태그의 개수. 최대 20개까지 가능. 기본값은 20.',
   })
   @ApiQuery({
     name: 'offset',
     required: false,
     type: Number,
-    description: '몇 번째 문서부터 검색 결과에 포함할지. 기본값은 0.',
+    description: '몇 번째 태그부터 검색 결과에 포함할지. 기본값은 0.',
   })
   async getTags(
     @GetUid() uid: string,
