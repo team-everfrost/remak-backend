@@ -8,7 +8,8 @@ export class TagService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getTags(uid: string, limit: number, offset: number): Promise<TagDto[]> {
+  async findAll(uid: string, limit: number, offset: number): Promise<TagDto[]> {
+    limit = limit > 20 ? 20 : limit;
     const tags = await this.prisma.tag.findMany({
       select: {
         name: true,

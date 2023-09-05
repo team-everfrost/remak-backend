@@ -36,7 +36,6 @@ export class TagController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
   ): Promise<TagDto[]> {
-    limit = limit > 20 ? 20 : limit;
-    return await this.tagService.getTags(uid, limit, offset);
+    return await this.tagService.findAll(uid, limit, offset);
   }
 }
