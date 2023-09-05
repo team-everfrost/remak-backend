@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DocumentType, Prisma, Status, Tag, User } from '@prisma/client';
+import { DocumentType, Prisma, Status, Tag } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemoDto } from './dto/request/memo.dto';
@@ -13,6 +13,7 @@ import { WebpageDto } from './dto/request/webpage.dto';
 import { DocumentDto } from './dto/response/document.dto';
 import { OpenAiService } from '../openai/open-ai.service';
 import { AwsService } from '../aws/aws.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class DocumentService {
@@ -22,6 +23,7 @@ export class DocumentService {
     private prisma: PrismaService,
     private openAiService: OpenAiService,
     private awsService: AwsService,
+    private userService: UserService,
   ) {}
 
   async findByCursor(
@@ -32,7 +34,7 @@ export class DocumentService {
   ): Promise<DocumentDto[]> {
     cursor = cursor || new Date();
     take = Math.min(take, 20);
-    const user = await this.getUserByUid(uid);
+    const user = await this.userService.findByUid(uid);
 
     // cursor-based pagination with updatedAt. if cursor is same, then sort by docId (uuid)
     const documents = await this.prisma.document.findMany({
@@ -77,7 +79,7 @@ export class DocumentService {
     limit: number,
     offset: number,
   ): Promise<DocumentDto[]> {
-    const user = await this.getUserByUid(uid);
+    const user = await this.userService.findByUid(uid);
     const vector = await this.getVectorFromQuery(query);
     const documentsWithVector: any = await this.fetchDocumentsWithVector(
       user.id,
@@ -98,7 +100,7 @@ export class DocumentService {
     cursor = cursor ? cursor : new Date();
     take = take > 20 ? 20 : take;
 
-    const user = await this.getUserByUid(uid);
+    const user = await this.userService.findByUid(uid);
     const documents = await this.prisma.document.findMany({
       where: {
         AND: [
@@ -129,7 +131,7 @@ export class DocumentService {
   }
 
   async createMemo(uid: string, memoDto: MemoDto): Promise<DocumentDto> {
-    const user = await this.getUserByUid(uid);
+    const user = await this.userService.findByUid(uid);
 
     const document = await this.prisma.document.create({
       data: {
@@ -184,7 +186,7 @@ export class DocumentService {
     uid: string,
     webPageDto: WebpageDto,
   ): Promise<DocumentDto> {
-    const user = await this.getUserByUid(uid);
+    const user = await this.userService.findByUid(uid);
 
     const document = await this.prisma.document.create({
       data: {
@@ -283,7 +285,7 @@ export class DocumentService {
     uid: string,
     files: Express.Multer.File[],
   ): Promise<DocumentDto[]> {
-    const user = await this.getUserByUid(uid);
+    const user = await this.userService.findByUid(uid);
     const documentDtos: DocumentDto[] = [];
 
     for (const file of files) {
@@ -345,7 +347,7 @@ export class DocumentService {
     cursor = cursor || new Date();
     take = Math.min(take, 20);
 
-    const user = await this.getUserByUid(uid);
+    const user = await this.userService.findByUid(uid);
 
     const tag = await this.prisma.tag.findFirst({
       where: {
@@ -470,17 +472,5 @@ export class DocumentService {
 
   private async requestScrape(documentId: bigint): Promise<void> {
     await this.awsService.sendMessageToScrapeQueue(documentId);
-  }
-
-  private async getUserByUid(uid: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { uid },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with uid ${uid} not found`);
-    }
-
-    return user;
   }
 }

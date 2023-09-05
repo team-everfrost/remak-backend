@@ -5,6 +5,7 @@ import { DocumentController } from './document.controller';
 import { DocumentService } from './document.service';
 import { OpenAiService } from '../openai/open-ai.service';
 import { AwsService } from '../aws/aws.service';
+import { UserService } from '../user/user.service';
 
 describe('DocumentController', () => {
   let controller: DocumentController;
@@ -17,6 +18,7 @@ describe('DocumentController', () => {
         ConfigService,
         OpenAiService,
         AwsService,
+        UserService,
         { provide: PrismaService, useValue: {} },
       ],
     }).compile();

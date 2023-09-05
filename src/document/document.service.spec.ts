@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DocumentService } from './document.service';
 import { OpenAiService } from '../openai/open-ai.service';
 import { AwsService } from '../aws/aws.service';
+import { UserService } from '../user/user.service';
 
 describe('DocumentService', () => {
   let documentService: DocumentService;
@@ -47,6 +48,7 @@ describe('DocumentService', () => {
       providers: [
         DocumentService,
         ConfigService,
+        UserService,
         {
           provide: OpenAiService,
           useValue: {
