@@ -42,7 +42,7 @@
     "class-validator": "^0.14.0",
     "multer": "^1.4.4",
     "nodemailer": "^6.9.4",
-    "openai": "^3.3.0",
+    "openai": "^4.5.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",
