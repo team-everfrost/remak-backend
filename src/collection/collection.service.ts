@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CollectionDto } from './dto/response/collection.dto';
 import { UserService } from '../user/user.service';
 import { CreateCollectionDto } from './dto/request/create-collection.dto';
+import { UpdateCollectionDto } from './dto/request/update-collection.dto';
 
 @Injectable()
 export class CollectionService {
@@ -102,7 +103,7 @@ export class CollectionService {
     await this.prisma.collection.delete({ where: { id: collection.id } });
   }
 
-  async findOne(uid: string, name: string) {
+  async findOne(uid: string, name: string): Promise<CollectionDto> {
     const user = await this.userService.findByUid(uid);
     const collection = await this.prisma.collection.findUnique({
       where: { userId_name: { userId: user.id, name } },
@@ -117,6 +118,61 @@ export class CollectionService {
       name: collection.name,
       description: collection.description,
       count: collection._count.documents,
+    };
+  }
+
+  async updateOne(
+    uid: string,
+    name: string,
+    updateCollectionDto: UpdateCollectionDto,
+  ): Promise<CollectionDto> {
+    const user = await this.userService.findByUid(uid);
+    const collection = await this.prisma.collection.findUnique({
+      where: { userId_name: { userId: user.id, name } },
+      include: { user: true, documents: true },
+    });
+
+    if (!collection) {
+      throw new BadRequestException('Collection does not exist');
+    }
+
+    if (collection.user.uid !== uid) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const addedDocuments = await this.prisma.document.findMany({
+      select: { id: true },
+      where: {
+        userId: user.id,
+        docId: { in: updateCollectionDto.addedDocIds ?? [] },
+      },
+    });
+
+    const removedDocuments = await this.prisma.document.findMany({
+      select: { id: true },
+      where: {
+        userId: user.id,
+        docId: { in: updateCollectionDto.removedDocIds ?? [] },
+      },
+    });
+
+    const updatedCollection = await this.prisma.collection.update({
+      where: { id: collection.id },
+      include: { _count: { select: { documents: true } } },
+      data: {
+        name: updateCollectionDto.name,
+        description: updateCollectionDto.description,
+        documents: {
+          connect: addedDocuments.map((doc) => ({ id: doc.id })),
+          disconnect: removedDocuments.map((doc) => ({ id: doc.id })),
+        },
+      },
+    });
+
+    return {
+      name: updatedCollection.name,
+      description: updatedCollection.description,
+      count: updatedCollection._count.documents,
     };
   }
 }

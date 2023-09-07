@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -15,6 +17,7 @@ import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { CollectionDto } from './dto/response/collection.dto';
 import { CreateCollectionDto } from './dto/request/create-collection.dto';
+import { UpdateCollectionDto } from './dto/request/update-collection.dto';
 
 @Controller('collection')
 @UseGuards(AuthGuard('jwt'))
@@ -59,7 +62,16 @@ export class CollectionController {
     return this.collectionService.findOne(uid, name);
   }
 
-  @Post('delete/:name')
+  @Patch('update/:name')
+  update(
+    @GetUid() uid: string,
+    @Param('name') name: string,
+    @Body() updateCollectionDto: UpdateCollectionDto,
+  ): Promise<CollectionDto> {
+    return this.collectionService.updateOne(uid, name, updateCollectionDto);
+  }
+
+  @Delete('delete/:name')
   delete(@GetUid() uid: string, @Param('name') name: string): Promise<void> {
     return this.collectionService.deleteOne(uid, name);
   }
