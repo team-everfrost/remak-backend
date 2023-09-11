@@ -28,4 +28,30 @@ export class TagService {
       count: tag._count.documents,
     }));
   }
+
+  async findByQuery(
+    uid: string,
+    query: string,
+    limit: number,
+    offset: number,
+  ): Promise<TagDto[]> {
+    const tags = await this.prisma.tag.findMany({
+      select: {
+        name: true,
+        _count: { select: { documents: true } },
+      },
+      where: {
+        user: { uid },
+        name: { contains: query },
+      },
+      orderBy: [{ documents: { _count: 'desc' } }, { name: 'asc' }],
+      take: limit,
+      skip: offset,
+    });
+
+    return tags.map((tag) => ({
+      name: tag.name,
+      count: tag._count.documents,
+    }));
+  }
 }
