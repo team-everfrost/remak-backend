@@ -88,7 +88,7 @@ export class CollectionService {
   async deleteOne(uid: string, name: string): Promise<void> {
     const user = await this.userService.findByUid(uid);
     const collection = await this.prisma.collection.findUnique({
-      where: { userId_name: { userId: user.id, name } },
+      where: { name_userId: { userId: user.id, name } },
       include: { user: true },
     });
 
@@ -106,7 +106,7 @@ export class CollectionService {
   async findOne(uid: string, name: string): Promise<CollectionDto> {
     const user = await this.userService.findByUid(uid);
     const collection = await this.prisma.collection.findUnique({
-      where: { userId_name: { userId: user.id, name } },
+      where: { name_userId: { userId: user.id, name } },
       include: { _count: { select: { documents: true } } },
     });
 
@@ -128,7 +128,7 @@ export class CollectionService {
   ): Promise<CollectionDto> {
     const user = await this.userService.findByUid(uid);
     const collection = await this.prisma.collection.findUnique({
-      where: { userId_name: { userId: user.id, name } },
+      where: { name_userId: { userId: user.id, name } },
       include: { user: true, documents: true },
     });
 
