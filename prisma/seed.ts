@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 const password = bcrypt.hashSync('password', 10);
 
-async function createUserWithDocumentsAndTags(index: number, numDocs: number) {
+async function createUserWithDocuments(index: number, numDocs: number) {
   const documentData = Array.from({ length: numDocs }, (_, i) => ({
     title: `user${index} document${i + 1}`,
     type: DocumentType.MEMO,
@@ -48,6 +48,17 @@ async function createUserWithDocumentsAndTags(index: number, numDocs: number) {
     },
   });
 
+  const createdCollection = await prisma.collection.create({
+    data: {
+      name: `collection${index}`,
+      user: {
+        connect: {
+          id: createdUser.id,
+        },
+      },
+    },
+  });
+
   await Promise.all(
     createdUser.documents.map((doc) =>
       prisma.document.update({
@@ -58,6 +69,11 @@ async function createUserWithDocumentsAndTags(index: number, numDocs: number) {
           tags: {
             connect: {
               id: createdTag.id,
+            },
+          },
+          collections: {
+            connect: {
+              id: createdCollection.id,
             },
           },
         },
@@ -86,7 +102,7 @@ async function createEmbeddedText(documentId: bigint, userId: bigint) {
 async function main() {
   for (let i = 0; i < 10; i++) {
     try {
-      const user = await createUserWithDocumentsAndTags(i, 500);
+      const user = await createUserWithDocuments(i, 500);
       const docs: Document[] = user.documents;
       await Promise.all(docs.map((doc) => createEmbeddedText(doc.id, user.id)));
     } catch (e) {
