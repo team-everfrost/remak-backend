@@ -9,6 +9,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { UserModule } from './user/user.module';
 import { TagModule } from './tag/tag.module';
 import { CollectionModule } from './collection/collection.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CollectionModule } from './collection/collection.module';
     UserModule,
     TagModule,
     CollectionModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

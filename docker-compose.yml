@@ -14,7 +14,7 @@ services:
 
   db:
     # image: ankane/pgvector
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.pg
     ports:
@@ -35,7 +35,38 @@ services:
     volumes:
       - redis-data:/data
 
+  es:
+    image: elasticsearch:8.9.2
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=changeme
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+
+  kibana:
+    image: kibana:8.9.2
+    ports:
+      - "5601:5601"
+    depends_on:
+      - es
+    networks:
+      - elastic
+
 volumes:
+  elastic-data:
+    driver: local
   redis-data:
     driver: local
   db-data:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge
