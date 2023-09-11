@@ -349,10 +349,12 @@ export class DocumentService {
 
     const user = await this.userService.findByUid(uid);
 
-    const tag = await this.prisma.tag.findFirst({
+    const tag = await this.prisma.tag.findUnique({
       where: {
-        user: { id: user.id },
-        name: tagName,
+        name_userId: {
+          name: tagName,
+          userId: user.id,
+        },
       },
     });
 
@@ -365,6 +367,56 @@ export class DocumentService {
         AND: [
           {
             tags: { some: { id: tag.id } },
+          },
+          {
+            OR: [
+              { updatedAt: { lt: cursor } },
+              {
+                updatedAt: cursor,
+                docId: { lt: docId },
+              },
+            ],
+          },
+        ],
+      },
+      include: { tags: true },
+      orderBy: [{ updatedAt: 'desc' }],
+      take,
+    });
+
+    return documents.map((document) => new DocumentDto(document));
+  }
+
+  async findByCollection(
+    uid: string,
+    collectionName: string,
+    cursor: Date,
+    docId: string,
+    take: number,
+  ): Promise<DocumentDto[]> {
+    cursor = cursor || new Date();
+    take = Math.min(take, 20);
+
+    const user = await this.userService.findByUid(uid);
+
+    const collection = await this.prisma.collection.findUnique({
+      where: {
+        name_userId: {
+          name: collectionName,
+          userId: user.id,
+        },
+      },
+    });
+
+    if (!collection) {
+      throw new NotFoundException(`Tag with name ${collectionName} not found`);
+    }
+
+    const documents = await this.prisma.document.findMany({
+      where: {
+        AND: [
+          {
+            collections: { some: { id: collection.id } },
           },
           {
             OR: [
