@@ -175,4 +175,36 @@ export class CollectionService {
       count: updatedCollection._count.documents,
     };
   }
+
+  async addDocuments(
+    uid: string,
+    name: string,
+    docIds: string[],
+  ): Promise<void> {
+    const user = await this.userService.findByUid(uid);
+    const collection = await this.prisma.collection.findUnique({
+      where: { name_userId: { userId: user.id, name } },
+    });
+
+    if (!collection) {
+      throw new BadRequestException('Collection does not exist');
+    }
+
+    const documents = await this.prisma.document.findMany({
+      select: { id: true },
+      where: {
+        userId: user.id,
+        docId: { in: docIds },
+      },
+    });
+
+    await this.prisma.collection.update({
+      where: { id: collection.id },
+      data: {
+        documents: {
+          connect: documents.map((doc) => ({ id: doc.id })),
+        },
+      },
+    });
+  }
 }

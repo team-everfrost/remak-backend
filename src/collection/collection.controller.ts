@@ -54,6 +54,15 @@ export class CollectionController {
     return this.collectionService.create(uid, createCollectionDto);
   }
 
+  @Post('add/:name')
+  addDocuments(
+    @GetUid() uid: string,
+    @Param('name') name: string,
+    @Body() docIds: string[],
+  ) {
+    return this.collectionService.addDocuments(uid, name, docIds);
+  }
+
   @Get('find/:name')
   findByName(
     @GetUid() uid: string,
