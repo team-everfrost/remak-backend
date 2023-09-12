@@ -18,6 +18,7 @@ import { GetUid } from '../decorators/get-uid.decorator';
 import { CollectionDto } from './dto/response/collection.dto';
 import { CreateCollectionDto } from './dto/request/create-collection.dto';
 import { UpdateCollectionDto } from './dto/request/update-collection.dto';
+import { AddDocumentsDto } from './dto/request/add-documents.dto';
 
 @Controller('collection')
 @UseGuards(AuthGuard('jwt'))
@@ -58,9 +59,9 @@ export class CollectionController {
   addDocuments(
     @GetUid() uid: string,
     @Param('name') name: string,
-    @Body() docIds: string[],
+    @Body() addDocumentsDto: AddDocumentsDto,
   ) {
-    return this.collectionService.addDocuments(uid, name, docIds);
+    return this.collectionService.addDocuments(uid, name, addDocumentsDto);
   }
 
   @Get('find/:name')

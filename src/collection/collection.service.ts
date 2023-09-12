@@ -9,6 +9,7 @@ import { CollectionDto } from './dto/response/collection.dto';
 import { UserService } from '../user/user.service';
 import { CreateCollectionDto } from './dto/request/create-collection.dto';
 import { UpdateCollectionDto } from './dto/request/update-collection.dto';
+import { AddDocumentsDto } from './dto/request/add-documents.dto';
 
 @Injectable()
 export class CollectionService {
@@ -197,8 +198,9 @@ export class CollectionService {
   async addDocuments(
     uid: string,
     name: string,
-    docIds: string[],
+    addDocumentsDto: AddDocumentsDto,
   ): Promise<void> {
+    const docIds = addDocumentsDto.docIds;
     const user = await this.userService.findByUid(uid);
     const collection = await this.prisma.collection.findUnique({
       where: { name_userId: { userId: user.id, name } },
