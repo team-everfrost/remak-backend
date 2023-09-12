@@ -1,13 +1,14 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateCollectionDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  newName?: string;
 
+  @IsOptional()
   @IsString()
-  description: string;
+  description?: string;
 
   @IsOptional()
   @IsString({ each: true })

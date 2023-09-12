@@ -136,7 +136,7 @@ export class CollectionService {
       throw new BadRequestException('Collection does not exist');
     }
 
-    if (collection.user.uid !== uid) {
+    if (collection.user.id !== user.id) {
       throw new UnauthorizedException('Unauthorized');
     }
 
@@ -156,24 +156,42 @@ export class CollectionService {
       },
     });
 
-    const updatedCollection = await this.prisma.collection.update({
-      where: { id: collection.id },
-      include: { _count: { select: { documents: true } } },
-      data: {
-        name: updateCollectionDto.name,
-        description: updateCollectionDto.description,
-        documents: {
-          connect: addedDocuments.map((doc) => ({ id: doc.id })),
-          disconnect: removedDocuments.map((doc) => ({ id: doc.id })),
-        },
-      },
-    });
+    const updateData: any = {};
+    if (updateCollectionDto.newName) {
+      updateData.name = updateCollectionDto.newName;
+    }
+    if (updateCollectionDto.description) {
+      updateData.description = updateCollectionDto.description;
+    }
+    if (addedDocuments.length > 0) {
+      updateData.documents = {
+        connect: addedDocuments.map((doc) => ({ id: doc.id })),
+      };
+    }
+    if (removedDocuments.length > 0) {
+      updateData.documents = {
+        disconnect: removedDocuments.map((doc) => ({ id: doc.id })),
+      };
+    }
 
-    return {
-      name: updatedCollection.name,
-      description: updatedCollection.description,
-      count: updatedCollection._count.documents,
-    };
+    try {
+      const updatedCollection = await this.prisma.collection.update({
+        where: { id: collection.id },
+        include: { _count: { select: { documents: true } } },
+        data: { ...updateData },
+      });
+
+      return {
+        name: updatedCollection.name,
+        description: updatedCollection.description,
+        count: updatedCollection._count.documents,
+      };
+    } catch (e) {
+      if (e.code === 'P2002') {
+        // "Unique constraint failed on the {constraint}" 에러
+        throw new BadRequestException('Collection already exists');
+      }
+    }
   }
 
   async addDocuments(
