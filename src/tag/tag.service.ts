@@ -42,7 +42,7 @@ export class TagService {
       },
       where: {
         user: { uid },
-        name: { contains: query },
+        name: { contains: query, mode: 'insensitive' },
       },
       orderBy: [{ documents: { _count: 'desc' } }, { name: 'asc' }],
       take: limit,
