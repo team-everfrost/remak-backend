@@ -74,12 +74,22 @@ export class AuthService {
   async sendSignupCode(emailDto: EmailDto): Promise<void> {
     const { email } = emailDto;
 
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    this.logger.log(`user: ${JSON.stringify(user)}` + `email: ${email}`);
+
+    if (user) {
+      throw new ConflictException('Email already exists');
+    }
+
     // TODO: rate limit
 
     const signupCode = this.getSignupCode();
     this.logger.debug(`signupCode: ${signupCode}`);
 
     await this.awsService.sendSignupEmail(email, signupCode);
+
+    // TODO: change to redis
     await this.prisma.email.upsert({
       where: { email },
       update: { signupCode },

@@ -38,11 +38,13 @@ export class AuthController {
   }
 
   @Post('/signup-code')
+  @HttpCode(HttpStatus.OK)
   sendSignupCode(@Body() emailDto: EmailDto): Promise<void> {
     return this.authService.sendSignupCode(emailDto);
   }
 
   @Post('/verify-code')
+  @HttpCode(HttpStatus.OK)
   verifySignupCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<void> {
     return this.authService.verifySignupCode(verifyCodeDto);
   }
