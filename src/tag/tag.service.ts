@@ -8,42 +8,25 @@ export class TagService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(uid: string, limit: number, offset: number): Promise<TagDto[]> {
-    limit = limit > 20 ? 20 : limit;
-    const tags = await this.prisma.tag.findMany({
-      select: {
-        name: true,
-        _count: { select: { documents: true } },
-      },
-      where: { user: { uid } },
-      orderBy: [{ documents: { _count: 'desc' } }, { name: 'asc' }],
-      take: limit,
-      skip: offset,
-    });
-
-    this.logger.log(`getTags: ${JSON.stringify(tags)}`);
-
-    return tags.map((tag) => ({
-      name: tag.name,
-      count: tag._count.documents,
-    }));
-  }
-
-  async findByQuery(
+  async find(
     uid: string,
     query: string,
     limit: number,
     offset: number,
   ): Promise<TagDto[]> {
+    limit = limit > 20 ? 20 : limit;
+
+    const whereData = { user: { uid } };
+    if (query) {
+      whereData['name'] = { contains: query, mode: 'insensitive' };
+    }
+
     const tags = await this.prisma.tag.findMany({
       select: {
         name: true,
         _count: { select: { documents: true } },
       },
-      where: {
-        user: { uid },
-        name: { contains: query, mode: 'insensitive' },
-      },
+      where: { ...whereData },
       orderBy: [{ documents: { _count: 'desc' } }, { name: 'asc' }],
       take: limit,
       skip: offset,
