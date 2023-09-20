@@ -31,7 +31,7 @@ export class DocumentController {
 
   constructor(private readonly documentService: DocumentService) {}
 
-  @Post('file/upload')
+  @Post('file')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       limits: { fileSize: 1024 * 1024 * 10 },
@@ -60,7 +60,7 @@ export class DocumentController {
     return this.documentService.uploadFiles(uid, files);
   }
 
-  @Get('file/download/:docId')
+  @Get('file/:docId')
   downloadFile(
     @GetUid() uid: string,
     @Param('docId') docId: string,
@@ -68,7 +68,7 @@ export class DocumentController {
     return this.documentService.downloadFile(uid, docId);
   }
 
-  @Post('memo/create')
+  @Post('memo')
   createMemo(
     @GetUid() uid: string,
     @Body() memoDto: MemoDto,
@@ -76,7 +76,7 @@ export class DocumentController {
     return this.documentService.createMemo(uid, memoDto);
   }
 
-  @Patch('memo/update/:docId')
+  @Patch('memo/:docId')
   updateMemo(
     @GetUid() uid: string,
     @Param('docId') docId: string,
@@ -85,7 +85,7 @@ export class DocumentController {
     return this.documentService.updateMemo(uid, docId, memoDto);
   }
 
-  @Post('webpage/create')
+  @Post('webpage')
   createWebpage(
     @GetUid() uid: string,
     @Body() webpageDto: WebpageDto,
@@ -93,7 +93,7 @@ export class DocumentController {
     return this.documentService.createWebpage(uid, webpageDto);
   }
 
-  @Patch('webpage/update/:docId')
+  @Patch('webpage/:docId')
   updateWebpage(
     @GetUid() uid: string,
     @Param('docId') docId: string,

@@ -64,7 +64,7 @@ export class CollectionController {
     return this.collectionService.addDocuments(uid, name, addDocumentsDto);
   }
 
-  @Get('find/:name')
+  @Get(':name')
   findByName(
     @GetUid() uid: string,
     @Param('name') name: string,
@@ -72,7 +72,7 @@ export class CollectionController {
     return this.collectionService.findOne(uid, name);
   }
 
-  @Patch('update/:name')
+  @Patch(':name')
   update(
     @GetUid() uid: string,
     @Param('name') name: string,
@@ -81,7 +81,7 @@ export class CollectionController {
     return this.collectionService.updateOne(uid, name, updateCollectionDto);
   }
 
-  @Delete('delete/:name')
+  @Delete(':name')
   delete(@GetUid() uid: string, @Param('name') name: string): Promise<void> {
     return this.collectionService.deleteOne(uid, name);
   }
