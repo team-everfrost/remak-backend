@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
 
 export class WebpageDto {
   @IsNotEmpty()
@@ -12,6 +12,7 @@ export class WebpageDto {
 
   @IsNotEmpty()
   @IsString()
+  @IsUrl()
   @ApiProperty({
     description: '웹페이지 주소',
     example: 'https://www.naver.com',
