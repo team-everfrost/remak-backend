@@ -9,13 +9,17 @@ import {
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
 
 @Injectable()
 export class AwsService {
   private readonly logger: Logger = new Logger(AwsService.name);
   private readonly config = {
     region: this.configService.get<string>('AWS_REGION'),
-    credentials: this.getCredential(),
+    credentials: () => {
+      const credentialsProvider = defaultProvider();
+      return credentialsProvider();
+    },
   };
   private readonly s3Client: S3Client = new S3Client(this.config);
   private readonly sqsClient: SQSClient = new SQSClient(this.config);
@@ -141,14 +145,5 @@ export class AwsService {
       },
       Source: fromAddress,
     });
-  }
-
-  private getCredential() {
-    return this.configService.get<string>('NODE_ENV') === 'development'
-      ? {
-          accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY'),
-          secretAccessKey: this.configService.get<string>('AWS_SECRET_KEY'),
-        }
-      : undefined;
   }
 }
