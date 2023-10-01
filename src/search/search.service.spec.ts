@@ -18,6 +18,8 @@ describe('SearchService', () => {
                   return 'http://localhost:9200';
                 case 'OPENSEARCH_INDEX':
                   return 'index';
+                case 'AWS_REGION':
+                  return 'ap-northeast-2';
                 default:
                   return null;
               }

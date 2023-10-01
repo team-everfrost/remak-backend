@@ -14,8 +14,8 @@ export class SearchService {
   constructor(private readonly configService: ConfigService) {
     this.client = new Client({
       ...AwsSigv4Signer({
-        region: 'ap-northeast-1',
-        service: 'aoss',
+        region: this.configService.get<string>('AWS_REGION'),
+        service: 'es',
         getCredentials: () => {
           const credentialsProvider = defaultProvider();
           return credentialsProvider();
