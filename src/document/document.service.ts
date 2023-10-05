@@ -14,6 +14,7 @@ import { DocumentDto } from './dto/response/document.dto';
 import { OpenAiService } from '../openai/open-ai.service';
 import { AwsService } from '../aws/aws.service';
 import { UserService } from '../user/user.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class DocumentService {
@@ -24,6 +25,7 @@ export class DocumentService {
     private openAiService: OpenAiService,
     private awsService: AwsService,
     private userService: UserService,
+    private configService: ConfigService,
   ) {}
 
   async findByCursor(
@@ -304,6 +306,11 @@ export class DocumentService {
           data: {
             docId, // S3 object key
             type: documentType,
+            // IMAGE 인 경우 썸네일 추가
+            thumbnailUrl:
+              documentType === DocumentType.IMAGE
+                ? `${this.configService.get<string>('THUMBNAIL_URL')}/${docId}`
+                : null,
             status: Status.EMBED_PENDING,
             user: { connect: { id: user.id } },
             title: file.originalname,
