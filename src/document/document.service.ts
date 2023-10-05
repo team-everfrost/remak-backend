@@ -311,13 +311,21 @@ export class DocumentService {
               documentType === DocumentType.IMAGE
                 ? `${this.configService.get<string>('THUMBNAIL_URL')}/${docId}`
                 : null,
-            status: Status.EMBED_PENDING,
+            status:
+              documentType === DocumentType.IMAGE
+                ? Status.COMPLETED
+                : Status.EMBED_PENDING,
             user: { connect: { id: user.id } },
             title: file.originalname,
           },
           include: { tags: true },
         });
-        await this.requestEmbed(document.id);
+
+        // FILE 인 경우 임베딩 요청
+        if (documentType === DocumentType.FILE) {
+          await this.requestEmbed(document.id);
+        }
+
         documentDtos.push(new DocumentDto(document));
       } catch (error) {
         this.logger.error(error);
