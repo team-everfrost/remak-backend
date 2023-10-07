@@ -3,7 +3,10 @@ import { Client } from '@opensearch-project/opensearch';
 import { ConfigService } from '@nestjs/config';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
-import { DocumentIndexDto } from './dto/document.index.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { OpenAiService } from '../openai/open-ai.service';
+import { UserService } from '../user/user.service';
+import { DocumentDto } from '../document/dto/response/document.dto';
 
 @Injectable()
 export class SearchService {
@@ -11,7 +14,12 @@ export class SearchService {
   private readonly logger: Logger = new Logger(SearchService.name);
   private readonly index: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly openAiService: OpenAiService,
+    private readonly userService: UserService,
+  ) {
     this.client = new Client({
       ...AwsSigv4Signer({
         region: this.configService.get<string>('AWS_REGION'),
@@ -27,12 +35,162 @@ export class SearchService {
     this.index = this.configService.get<string>('OPENSEARCH_INDEX');
   }
 
-  async indexDocument(uid: string, body: DocumentIndexDto): Promise<any> {
-    const res = await this.client.index({
-      index: this.index,
-      body,
+  async searchByText(uid: string, query: string): Promise<DocumentDto[]> {
+    const user = await this.userService.findByUid(uid);
+
+    const result = await this.textSearch(query, user.id);
+
+    this.logger.log(result);
+
+    const documentIds = result.body.hits.hits.map(
+      (hit) => hit._source.document_id,
+    );
+    const documents = await this.prisma.document.findMany({
+      where: { id: { in: documentIds } },
+      include: { tags: true },
     });
-    this.logger.log(`Indexed ${JSON.stringify(body)} to OpenSearch`);
-    return res;
+
+    // documentId 순서대로 정렬
+    documents.sort((a, b) => {
+      return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
+    });
+
+    this.logger.log(documents);
+
+    return documents.map((document) => new DocumentDto(document));
+  }
+
+  async searchByVector(uid: string, query: string): Promise<DocumentDto[]> {
+    const user = await this.userService.findByUid(uid);
+    const queryVector = await this.openAiService.getEmbedding(query);
+
+    const result = await this.vectorSearch(queryVector, user.id);
+
+    this.logger.log(result);
+
+    const documentIds = result.body.hits.hits.map(
+      (hit) => hit._source.document_id,
+    );
+    const documents = await this.prisma.document.findMany({
+      where: { id: { in: documentIds } },
+      include: { tags: true },
+    });
+
+    // documentId 순서대로 정렬
+    documents.sort((a, b) => {
+      return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
+    });
+
+    this.logger.log(documents);
+
+    return documents.map((document) => new DocumentDto(document));
+  }
+
+  async searchByHybrid(uid: string, query: string) {
+    const user = await this.userService.findByUid(uid);
+    const queryVector = await this.openAiService.getEmbedding(query);
+
+    const vectorResult = await this.vectorSearch(queryVector, user.id);
+    const textResult = await this.textSearch(query, user.id);
+
+    const scores = this.computeRRFScores(
+      vectorResult.body.hits.hits,
+      textResult.body.hits.hits,
+    );
+
+    this.logger.debug(scores);
+
+    const vectorDocumentIds: bigint[] = vectorResult.body.hits.hits.map(
+      (hit) => hit._source.document_id,
+    );
+    const textDocumentIds: bigint[] = textResult.body.hits.hits.map(
+      (hit) => hit._source.document_id,
+    );
+
+    const documentIds = [
+      ...new Set([...vectorDocumentIds, ...textDocumentIds]),
+    ];
+
+    const documents = await this.prisma.document.findMany({
+      where: { id: { in: documentIds } },
+      include: { tags: true },
+    });
+
+    // sort by score in descending order
+    documents.sort((a, b) => {
+      return scores[b.id.toString()] - scores[a.id.toString()];
+    });
+
+    return documents.map((document) => new DocumentDto(document));
+  }
+
+  // document_id: score 형태로 반환
+  computeRRFScores(
+    vectorResultItems,
+    textResultItems,
+    k = 60,
+  ): { [key: string]: number } {
+    const scores = {};
+
+    const updateScore = (document_id, rank) => {
+      if (!scores[document_id]) scores[document_id] = 0;
+      scores[document_id] += 1 / (k + rank);
+    };
+
+    vectorResultItems.forEach((item, index) => {
+      updateScore(item._source.document_id.toString(), index + 1);
+    });
+
+    textResultItems.forEach((item, index) => {
+      updateScore(item._source.document_id.toString(), index + 1);
+    });
+
+    return scores;
+  }
+
+  private async textSearch(query: string, userId: bigint) {
+    return this.client.search({
+      index: this.index,
+      body: {
+        _source: [
+          'title',
+          'content',
+          'user_id',
+          'document_id',
+          'document_type',
+        ],
+        query: {
+          bool: {
+            must: [
+              { multi_match: { query, fields: ['title', 'content'] } },
+              { term: { user_id: userId } },
+            ],
+          },
+        },
+      },
+    });
+  }
+
+  private async vectorSearch(queryVector: number[], userId: bigint) {
+    return this.client.search({
+      index: this.index,
+      body: {
+        _source: [
+          'title',
+          'content',
+          'user_id',
+          'document_id',
+          'document_type',
+        ],
+        query: {
+          bool: {
+            must: [
+              { knn: { vector: { vector: queryVector, k: 50 } } },
+              { term: { user_id: userId } },
+            ],
+          },
+        },
+      },
+    });
   }
 }

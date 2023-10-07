@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SearchService } from './search.service';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+import { OpenAiService } from '../openai/open-ai.service';
+import { UserService } from '../user/user.service';
 
 describe('SearchService', () => {
   let service: SearchService;
@@ -9,6 +12,15 @@ describe('SearchService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SearchService,
+        UserService,
+        {
+          provide: OpenAiService,
+          useValue: {},
+        },
+        {
+          provide: PrismaService,
+          useValue: {},
+        },
         {
           provide: ConfigService,
           useValue: {
