@@ -1,15 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AwsService {

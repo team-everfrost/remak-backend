@@ -9,13 +9,13 @@ import { JwtService } from '@nestjs/jwt';
 import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'node:crypto';
+import { AwsService } from '../aws/aws.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/request/auth.dto';
 import { EmailDto } from './dto/request/email.dto';
 import { SignupDto } from './dto/request/signup.dto';
 import { VerifyCodeDto } from './dto/request/verify-code.dto';
 import { Token } from './dto/response/token.dto';
-import { AwsService } from '../aws/aws.service';
 
 @Injectable()
 export class AuthService {

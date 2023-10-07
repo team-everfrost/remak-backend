@@ -3,8 +3,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { UpdateUserDto } from './dto/request/update-user.dto';
-import { UserService } from './user.service';
 import { UserDto } from './dto/response/user.dto';
+import { UserService } from './user.service';
 
 @Controller('user')
 @UseGuards(AuthGuard('jwt'))

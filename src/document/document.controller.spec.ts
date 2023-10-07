@@ -1,11 +1,11 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AwsService } from '../aws/aws.service';
+import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserService } from '../user/user.service';
 import { DocumentController } from './document.controller';
 import { DocumentService } from './document.service';
-import { OpenAiService } from '../openai/open-ai.service';
-import { AwsService } from '../aws/aws.service';
-import { UserService } from '../user/user.service';
 
 describe('DocumentController', () => {
   let controller: DocumentController;

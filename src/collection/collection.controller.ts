@@ -11,14 +11,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CollectionService } from './collection.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { GetUid } from '../decorators/get-uid.decorator';
-import { CollectionDto } from './dto/response/collection.dto';
+import { CollectionService } from './collection.service';
+import { AddDocumentsDto } from './dto/request/add-documents.dto';
 import { CreateCollectionDto } from './dto/request/create-collection.dto';
 import { UpdateCollectionDto } from './dto/request/update-collection.dto';
-import { AddDocumentsDto } from './dto/request/add-documents.dto';
+import { CollectionDto } from './dto/response/collection.dto';
 
 @Controller('collection')
 @UseGuards(AuthGuard('jwt'))

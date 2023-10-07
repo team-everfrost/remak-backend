@@ -6,11 +6,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { TagService } from './tag.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { TagDto } from './dto/response/tag.dto';
+import { TagService } from './tag.service';
 
 @Controller('tag')
 @UseGuards(AuthGuard('jwt'))

@@ -5,11 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CollectionDto } from './dto/response/collection.dto';
 import { UserService } from '../user/user.service';
+import { AddDocumentsDto } from './dto/request/add-documents.dto';
 import { CreateCollectionDto } from './dto/request/create-collection.dto';
 import { UpdateCollectionDto } from './dto/request/update-collection.dto';
-import { AddDocumentsDto } from './dto/request/add-documents.dto';
+import { CollectionDto } from './dto/response/collection.dto';
 
 @Injectable()
 export class CollectionService {

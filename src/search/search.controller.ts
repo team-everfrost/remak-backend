@@ -1,9 +1,9 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { SearchService } from './search.service';
-import { GetUid } from '../decorators/get-uid.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { GetUid } from '../decorators/get-uid.decorator';
 import { DocumentDto } from '../document/dto/response/document.dto';
+import { SearchService } from './search.service';
 
 @Controller('search')
 @UseGuards(AuthGuard('jwt'))

@@ -1,12 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Client } from '@opensearch-project/opensearch';
-import { ConfigService } from '@nestjs/config';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Client } from '@opensearch-project/opensearch';
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
-import { PrismaService } from '../prisma/prisma.service';
-import { OpenAiService } from '../openai/open-ai.service';
-import { UserService } from '../user/user.service';
 import { DocumentDto } from '../document/dto/response/document.dto';
+import { OpenAiService } from '../openai/open-ai.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class SearchService {
