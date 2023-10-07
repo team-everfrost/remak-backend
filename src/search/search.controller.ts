@@ -3,6 +3,7 @@ import { SearchService } from './search.service';
 import { GetUid } from '../decorators/get-uid.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { DocumentDto } from '../document/dto/response/document.dto';
 
 @Controller('search')
 @UseGuards(AuthGuard('jwt'))
@@ -14,7 +15,7 @@ export class SearchController {
   async searchByText(
     @GetUid() uid: string,
     @Param('query') query: string,
-  ): Promise<any> {
+  ): Promise<DocumentDto[]> {
     return this.searchService.searchByText(uid, query);
   }
 
@@ -22,7 +23,7 @@ export class SearchController {
   async searchByVector(
     @GetUid() uid: string,
     @Param('query') query: string,
-  ): Promise<any> {
+  ): Promise<DocumentDto[]> {
     return this.searchService.searchByVector(uid, query);
   }
 
@@ -30,7 +31,7 @@ export class SearchController {
   async searchByHybrid(
     @GetUid() uid: string,
     @Param('query') query: string,
-  ): Promise<any> {
+  ): Promise<DocumentDto[]> {
     return this.searchService.searchByHybrid(uid, query);
   }
 }
