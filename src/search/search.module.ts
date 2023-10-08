@@ -8,6 +8,7 @@ import { SearchService } from './search.service';
 @Module({
   imports: [ConfigModule, OpenAiModule, UserModule],
   providers: [SearchService],
+  exports: [SearchService],
   controllers: [SearchController],
 })
 export class SearchModule {}

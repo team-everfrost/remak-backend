@@ -11,6 +11,7 @@ import { v4 as uuid } from 'uuid';
 import { AwsService } from '../aws/aws.service';
 import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SearchService } from '../search/search.service';
 import { UserService } from '../user/user.service';
 import { MemoDto } from './dto/request/memo.dto';
 import { WebpageDto } from './dto/request/webpage.dto';
@@ -26,6 +27,7 @@ export class DocumentService {
     private awsService: AwsService,
     private userService: UserService,
     private configService: ConfigService,
+    private searchService: SearchService,
   ) {}
 
   async findByCursor(
@@ -277,6 +279,8 @@ export class DocumentService {
       ) {
         await this.awsService.deleteObjectFromS3(document.docId);
       }
+      // 인덱싱된 문서 삭제
+      await this.searchService.deleteIndexedDocument(document.id);
     } catch (error) {
       this.logger.error(error);
       throw new InternalServerErrorException('Failed to delete document');

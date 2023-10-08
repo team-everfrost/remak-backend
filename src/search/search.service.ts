@@ -155,6 +155,37 @@ export class SearchService {
     return documents.map((document) => new DocumentDto(document));
   }
 
+  async deleteIndexedDocument(documentId: bigint) {
+    try {
+      Promise.all([
+        this.client.deleteByQuery({
+          index: this.documentIndex,
+          body: {
+            query: {
+              term: {
+                document_id: documentId,
+              },
+            },
+          },
+        }),
+        this.client.deleteByQuery({
+          index: this.embeddingIndex,
+          body: {
+            query: {
+              term: {
+                document_id: documentId,
+              },
+            },
+          },
+        }),
+      ]);
+      this.logger.log(`documentId: ${documentId} deleted from index`);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   // document_id: score 형태로 반환
   computeRRFScores(
     vectorResultItems,

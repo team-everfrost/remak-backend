@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AwsService } from '../aws/aws.service';
 import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SearchService } from '../search/search.service';
 import { UserService } from '../user/user.service';
 import { DocumentController } from './document.controller';
 import { DocumentService } from './document.service';
@@ -19,6 +20,7 @@ describe('DocumentController', () => {
         OpenAiService,
         AwsService,
         UserService,
+        SearchService,
         { provide: PrismaService, useValue: {} },
       ],
     }).compile();
