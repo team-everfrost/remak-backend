@@ -12,7 +12,8 @@ import { UserService } from '../user/user.service';
 export class SearchService {
   private readonly client: Client;
   private readonly logger: Logger = new Logger(SearchService.name);
-  private readonly index: string;
+  private readonly documentIndex: string;
+  private readonly embeddingIndex: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -32,15 +33,53 @@ export class SearchService {
       node: this.configService.get<string>('OPENSEARCH_NODE'), // OpenSearch domain URL
     });
 
-    this.index = this.configService.get<string>('OPENSEARCH_INDEX');
+    this.documentIndex = this.configService.get<string>(
+      'OPENSEARCH_DOCUMENT_INDEX',
+    );
+    this.embeddingIndex = this.configService.get<string>(
+      'OPENSEARCH_EMBEDDING_INDEX',
+    );
+  }
+
+  async autoComplete(uid: string, query: string) {
+    const user = await this.userService.findByUid(uid);
+    const result = await this.client.search({
+      index: this.documentIndex,
+      body: {
+        _source: ['title', 'document_id', 'user_id', 'document_type'],
+        query: {
+          bool: {
+            must: [
+              { match: { 'title.autocomplete': query } },
+              { term: { user_id: user.id } },
+            ],
+          },
+        },
+      },
+    });
+
+    this.logger.debug(`result: ${JSON.stringify(result.body.hits.hits)}`);
+
+    const documentIds = result.body.hits.hits.map(
+      (hit) => hit._source.document_id,
+    );
+
+    const documents = await this.prisma.document.findMany({
+      where: { id: { in: documentIds } },
+      include: { tags: true },
+    });
+
+    // documentId 순서대로 정렬
+    documents.sort((a, b) => {
+      return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
+    });
+
+    return documents.map((document) => new DocumentDto(document));
   }
 
   async searchByText(uid: string, query: string): Promise<DocumentDto[]> {
     const user = await this.userService.findByUid(uid);
-
     const result = await this.textSearch(query, user.id);
-
-    this.logger.log(result);
 
     const documentIds = result.body.hits.hits.map(
       (hit) => hit._source.document_id,
@@ -54,8 +93,6 @@ export class SearchService {
     documents.sort((a, b) => {
       return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
     });
-
-    this.logger.log(documents);
 
     return documents.map((document) => new DocumentDto(document));
   }
@@ -66,8 +103,6 @@ export class SearchService {
 
     const result = await this.vectorSearch(queryVector, user.id);
 
-    this.logger.log(result);
-
     const documentIds = result.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
@@ -80,8 +115,6 @@ export class SearchService {
     documents.sort((a, b) => {
       return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
     });
-
-    this.logger.log(documents);
 
     return documents.map((document) => new DocumentDto(document));
   }
@@ -97,8 +130,6 @@ export class SearchService {
       vectorResult.body.hits.hits,
       textResult.body.hits.hits,
     );
-
-    this.logger.debug(scores);
 
     const vectorDocumentIds: bigint[] = vectorResult.body.hits.hits.map(
       (hit) => hit._source.document_id,
@@ -150,7 +181,7 @@ export class SearchService {
 
   private async textSearch(query: string, userId: bigint) {
     return this.client.search({
-      index: this.index,
+      index: this.documentIndex,
       body: {
         _source: [
           'title',
@@ -173,15 +204,9 @@ export class SearchService {
 
   private async vectorSearch(queryVector: number[], userId: bigint) {
     return this.client.search({
-      index: this.index,
+      index: this.embeddingIndex,
       body: {
-        _source: [
-          'title',
-          'content',
-          'user_id',
-          'document_id',
-          'document_type',
-        ],
+        _source: ['document_id', 'user_id', 'document_type'],
         query: {
           bool: {
             must: [

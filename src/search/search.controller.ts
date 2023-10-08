@@ -11,6 +11,14 @@ import { SearchService } from './search.service';
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
+  @Get('autocomplete/:query')
+  async autoComplete(
+    @GetUid() uid: string,
+    @Param('query') query: string,
+  ): Promise<DocumentDto[]> {
+    return this.searchService.autoComplete(uid, query);
+  }
+
   @Get('text/:query')
   async searchByText(
     @GetUid() uid: string,
