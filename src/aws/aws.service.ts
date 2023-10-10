@@ -1,11 +1,13 @@
 import {
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
+  ListObjectsCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
-import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger } from '@nestjs/common';
@@ -27,25 +29,25 @@ export class AwsService {
 
   constructor(private configService: ConfigService) {}
 
-  async getSignedUrlFromS3(docId: string): Promise<string> {
+  async getDocuemntSignedUrl(docId: string): Promise<string> {
     return await getSignedUrl(
       this.s3Client,
       new GetObjectCommand({
-        Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+        Bucket: this.configService.get('AWS_S3_DOCUMENTS_BUCKET_NAME'),
         Key: docId,
       }),
       { expiresIn: 60 * 60 * 24 },
     );
   }
 
-  async putObjectToS3(
+  async putDocument(
     docId: string,
     file: Express.Multer.File,
     base64filename: string,
   ): Promise<void> {
     const res = await this.s3Client.send(
       new PutObjectCommand({
-        Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+        Bucket: this.configService.get('AWS_S3_DOCUMENTS_BUCKET_NAME'),
         Key: docId,
         Body: file.buffer,
         ContentType: file.mimetype,
@@ -63,15 +65,84 @@ export class AwsService {
     }
   }
 
-  async deleteObjectFromS3(docId: string): Promise<void> {
+  async deleteDocument(docId: string): Promise<void> {
     try {
       const res = await this.s3Client.send(
         new DeleteObjectCommand({
-          Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+          Bucket: this.configService.get('AWS_S3_DOCUMENTS_BUCKET_NAME'),
           Key: docId,
         }),
       );
+
       this.logger.log(`Deleted ${docId} from S3. res: ${JSON.stringify(res)}`);
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
+  }
+
+  async deleteThumbnail(docId: string): Promise<void> {
+    try {
+      const res = await this.s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: this.configService.get('AWS_S3_THUMBNAILS_BUCKET_NAME'),
+          Key: docId,
+        }),
+      );
+
+      this.logger.log(
+        `Deleted thumbnail of ${docId} from S3. res: ${JSON.stringify(res)}`,
+      );
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
+  }
+
+  async deleteWebpageImages(docId: string): Promise<void> {
+    try {
+      // S3에서 `docId/` 폴더 내의 모든 객체를 나열
+      const listObjectsResponse = await this.s3Client.send(
+        new ListObjectsCommand({
+          Bucket: this.configService.get('AWS_S3_WEBPAGE_IMAGES_BUCKET_NAME'),
+          Prefix: `${docId}/`,
+        }),
+      );
+
+      // 삭제할 객체가 없다면 바로 반환
+      if (
+        !listObjectsResponse.Contents ||
+        listObjectsResponse.Contents.length === 0
+      ) {
+        this.logger.log(`No webpage images for ${docId} in S3.`);
+        return;
+      }
+
+      // 나열된 객체들을 모두 삭제
+      const deleteObjectsResponse = await this.s3Client.send(
+        new DeleteObjectsCommand({
+          Bucket: this.configService.get('AWS_S3_WEBPAGE_IMAGES_BUCKET_NAME'),
+          Delete: {
+            Objects: listObjectsResponse.Contents.map((obj) => ({
+              Key: obj.Key,
+            })),
+          },
+        }),
+      );
+
+      // 삭제 결과 로깅
+      if (
+        deleteObjectsResponse.Errors &&
+        deleteObjectsResponse.Errors.length > 0
+      ) {
+        this.logger.error(
+          `Failed to delete some objects: ${JSON.stringify(
+            deleteObjectsResponse.Errors,
+          )}`,
+        );
+      } else {
+        this.logger.log(`Deleted all images for ${docId} from S3.`);
+      }
     } catch (e) {
       this.logger.error(e);
       throw e;

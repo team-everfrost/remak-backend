@@ -267,18 +267,16 @@ export class DocumentService {
         this.prisma.document.delete({
           where: { id: document.id },
         }),
+
+        // 방금 지운 문서가 유일한 문서인 태그는 삭제
         this.prisma.tag.deleteMany({
-          // 방금 지운 문서가 유일한 문서인 태그는 삭제
           where: { id: { in: deleteTags.map((tag) => tag.id) } },
         }),
       ]);
+
       // S3에서 파일 삭제
-      if (
-        document.type === DocumentType.FILE ||
-        document.type === DocumentType.IMAGE
-      ) {
-        await this.awsService.deleteObjectFromS3(document.docId);
-      }
+      await this.deleteAllObjectsInS3(document.docId);
+
       // 인덱싱된 문서 삭제
       await this.searchService.deleteIndexedDocument(document.id);
     } catch (error) {
@@ -304,7 +302,7 @@ export class DocumentService {
       const docId = uuid();
 
       try {
-        await this.awsService.putObjectToS3(docId, file, base64filename);
+        await this.awsService.putDocument(docId, file, base64filename);
         const documentType = this.getDocumentType(file.mimetype);
         const document = await this.prisma.document.create({
           data: {
@@ -353,7 +351,7 @@ export class DocumentService {
       throw new UnauthorizedException(`Unauthorized`);
     }
 
-    return await this.awsService.getSignedUrlFromS3(docId);
+    return await this.awsService.getDocuemntSignedUrl(docId);
   }
 
   async findByTag(
@@ -543,5 +541,13 @@ export class DocumentService {
 
   private async requestScrape(documentId: bigint): Promise<void> {
     await this.awsService.sendMessageToScrapeQueue(documentId);
+  }
+
+  private async deleteAllObjectsInS3(docId: string): Promise<void> {
+    Promise.all([
+      this.awsService.deleteDocument(docId),
+      this.awsService.deleteThumbnail(docId),
+      this.awsService.deleteWebpageImages(docId),
+    ]);
   }
 }
