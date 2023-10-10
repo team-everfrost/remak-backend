@@ -58,6 +58,7 @@ model Document {
   summary      String?
   status       Status // WEBPAGE: SCRPAE_PENDING, OTHERS: EMBED_PENDING
   thumbnailUrl String?      @map("thumbnail_url")
+  fileSize     BigInt? // WEBPAGE: size of scraped images, MEMO: null, OTHERS: size of file
 
   userId BigInt @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
