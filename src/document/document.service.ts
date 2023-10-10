@@ -319,6 +319,7 @@ export class DocumentService {
                 : Status.EMBED_PENDING,
             user: { connect: { id: user.id } },
             title: file.originalname,
+            fileSize: file.size,
           },
           include: { tags: true },
         });

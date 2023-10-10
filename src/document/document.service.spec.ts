@@ -1,7 +1,7 @@
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { DocumentType, Role, Status } from '@prisma/client';
+import { Document, DocumentType, Role, Status, User } from '@prisma/client';
 import { AwsService } from '../aws/aws.service';
 import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -16,7 +16,7 @@ describe('DocumentService', () => {
   const uid = 'test-uid';
   const docId = 'test-docId';
 
-  const mockUser = {
+  const mockUser: User = {
     id: BigInt(1),
     uid,
     email: 'test@asd.com',
@@ -28,7 +28,7 @@ describe('DocumentService', () => {
     updatedAt: new Date(),
   };
 
-  const mockDocument = {
+  const mockDocument: Document & { user: User } = {
     id: BigInt(1),
     docId,
     title: 'test title',
@@ -42,6 +42,7 @@ describe('DocumentService', () => {
     userId: BigInt(2),
     summary: 'test summary',
     user: mockUser,
+    fileSize: null,
   };
 
   beforeEach(async () => {
