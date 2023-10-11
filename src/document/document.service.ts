@@ -321,10 +321,8 @@ export class DocumentService {
           include: { tags: true },
         });
 
-        // FILE 인 경우 임베딩 요청
-        if (documentType === DocumentType.FILE) {
-          await this.requestEmbed(document.id);
-        }
+        // 임베딩 요청
+        await this.requestEmbed(document.id);
 
         documentDtos.push(new DocumentDto(document));
       } catch (error) {
