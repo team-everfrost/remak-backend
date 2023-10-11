@@ -313,10 +313,7 @@ export class DocumentService {
               documentType === DocumentType.IMAGE
                 ? `${this.configService.get<string>('THUMBNAIL_URL')}/${docId}`
                 : null,
-            status:
-              documentType === DocumentType.IMAGE
-                ? Status.COMPLETED
-                : Status.EMBED_PENDING,
+            status: Status.EMBED_PENDING,
             user: { connect: { id: user.id } },
             title: file.originalname,
             fileSize: file.size,
