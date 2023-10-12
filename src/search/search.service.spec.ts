@@ -13,29 +13,12 @@ describe('SearchService', () => {
       providers: [
         SearchService,
         UserService,
+        PrismaService,
+        ConfigService,
         {
           provide: OpenAiService,
-          useValue: {},
-        },
-        {
-          provide: PrismaService,
-          useValue: {},
-        },
-        {
-          provide: ConfigService,
           useValue: {
-            get: jest.fn().mockImplementation((key: string) => {
-              switch (key) {
-                case 'OPENSEARCH_NODE':
-                  return 'http://localhost:9200';
-                case 'OPENSEARCH_INDEX':
-                  return 'index';
-                case 'AWS_REGION':
-                  return 'ap-northeast-2';
-                default:
-                  return null;
-              }
-            }),
+            getEmbedding: jest.fn(),
           },
         },
       ],
@@ -46,5 +29,29 @@ describe('SearchService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('computeRRFScores', () => {
+    it('should compute scores correctly', () => {
+      const vectorResultItems = [
+        { _source: { document_id: 1 } },
+        { _source: { document_id: 2 } },
+      ];
+      const textResultItems = [
+        { _source: { document_id: 2 } },
+        { _source: { document_id: 3 } },
+      ];
+
+      const result = service.computeRRFScores(
+        vectorResultItems,
+        textResultItems,
+      );
+
+      expect(result).toEqual({
+        '1': 1 / 61,
+        '2': 1 / 61 + 1 / 62,
+        '3': 1 / 62,
+      });
+    });
   });
 });
