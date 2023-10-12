@@ -84,6 +84,9 @@ export class SearchService {
     const documentIds = result.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
+
+    this.logger.debug(`text search document ids: ${documentIds}`);
+
     const documents = await this.prisma.document.findMany({
       where: { id: { in: documentIds } },
       include: { tags: true },
@@ -106,6 +109,9 @@ export class SearchService {
     const documentIds = result.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
+
+    this.logger.debug(`vector search document ids: ${documentIds}`);
+
     const documents = await this.prisma.document.findMany({
       where: { id: { in: documentIds } },
       include: { tags: true },
@@ -137,6 +143,9 @@ export class SearchService {
     const textDocumentIds: bigint[] = textResult.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
+
+    this.logger.debug(`vector search document ids: ${vectorDocumentIds}`);
+    this.logger.debug(`text search document ids: ${textDocumentIds}`);
 
     const documentIds = [
       ...new Set([...vectorDocumentIds, ...textDocumentIds]),
@@ -245,6 +254,10 @@ export class SearchService {
               { term: { user_id: userId } },
             ],
           },
+        },
+        collapse: {
+          // 한 문서에 대해 여러 벡터가 존재할 수 있으므로 document_id로 collapse
+          field: 'document_id',
         },
       },
     });
