@@ -5,30 +5,20 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/request/update-user.dto';
 import { UserDto } from './dto/response/user.dto';
 
 @Injectable()
 export class UserService {
-  private readonly basicUserFileStorageSize = 1024 * 1024 * 1024 * 1; // 1GB
-  private readonly plusUserFileStorageSize = 1024 * 1024 * 1024 * 10; // 10GB
+  private readonly basicUserFileStorageSize = BigInt(1024 * 1024 * 1024 * 1); // 1GB
+  private readonly plusUserFileStorageSize = BigInt(1024 * 1024 * 1024 * 10); // 10GB
+  private readonly adminUserFileStorageSize = BigInt(1024 * 1024 * 1024 * 1024); // 1TB
+
   private readonly logger: Logger = new Logger(UserService.name);
 
   constructor(private readonly prisma: PrismaService) {}
-
-  async findOne(uid: string): Promise<UserDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { uid },
-    });
-
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    return new UserDto(user);
-  }
 
   async findByUid(uid: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
@@ -69,11 +59,14 @@ export class UserService {
       _sum: { fileSize: true },
     });
 
-    this.logger.log(
-      `user ${uid} total file size: ${documentFileSizeSummation}`,
+    this.logger.debug(
+      `user ${uid} total file size: ${JSON.stringify(
+        documentFileSizeSummation,
+      )}`,
     );
 
-    return documentFileSizeSummation._sum.fileSize;
+    // null인 경우 0 반환
+    return documentFileSizeSummation._sum.fileSize ?? BigInt(0);
   }
 
   async checkUploadAvailable(uid: string): Promise<boolean> {
@@ -85,17 +78,26 @@ export class UserService {
       throw new NotFoundException(`User with uid ${uid} not found`);
     }
 
-    const totalFileSize = await this.getTotalFileSize(uid);
+    const documentFileSizeSummation = await this.prisma.document.aggregate({
+      where: { userId: user.id },
+      _sum: { fileSize: true },
+    });
 
-    switch (user.role) {
-      case 'BASIC':
-        return totalFileSize < this.basicUserFileStorageSize;
-      case 'PLUS':
-        return totalFileSize < this.plusUserFileStorageSize;
-      case 'ADMIN':
-        return true;
+    const userFileStorageSize = this.getUserFileStorageSize(user.role);
+
+    return documentFileSizeSummation._sum.fileSize < userFileStorageSize;
+  }
+
+  getUserFileStorageSize(role: Role): bigint {
+    switch (role) {
+      case Role.BASIC:
+        return this.basicUserFileStorageSize;
+      case Role.PLUS:
+        return this.plusUserFileStorageSize;
+      case Role.ADMIN:
+        return this.adminUserFileStorageSize;
       default:
-        throw new Error(`Invalid role: ${user.role}`);
+        throw new Error(`Invalid role: ${role}`);
     }
   }
 }
