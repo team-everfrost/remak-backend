@@ -22,6 +22,28 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('getTotalFileSize', () => {
+    it('sum 결과가 null인 경우 0을 반환해야 함', async () => {
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
+        id: BigInt(1),
+        uid: 'user-uid',
+        email: 'user-email',
+        password: 'user-password',
+        name: 'user-name',
+        imageUrl: 'user-imageUrl',
+        role: Role.BASIC,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      jest
+        .spyOn(prisma.document, 'aggregate')
+        .mockResolvedValue({ _sum: { fileSize: null } } as any);
+
+      expect(await service.getTotalFileSize('user-id')).toEqual(BigInt(0));
+    });
+  });
+
   describe('checkUploadAvailable', () => {
     it('should throw NotFoundException if user does not exist', async () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
@@ -37,6 +59,7 @@ describe('UserService', () => {
       [Role.PLUS, 1024 * 1024 * 1024 * 10, false],
       [Role.ADMIN, 10000, true],
       [Role.ADMIN, 1024 * 1024 * 1024 * 20, true],
+      [Role.ADMIN, 1024 * 1024 * 1024 * 1024, false],
     ])(
       '유저 role이 %s이고, 파일 사이즈가 %s일 때, %s를 반환해야 함',
       async (role, fileSize, expectedResult) => {
@@ -51,9 +74,11 @@ describe('UserService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+
         jest
-          .spyOn(service, 'getTotalFileSize')
-          .mockResolvedValue(BigInt(fileSize));
+          .spyOn(prisma.document, 'aggregate')
+          .mockResolvedValue({ _sum: { fileSize: BigInt(fileSize) } } as any);
+
         expect(await service.checkUploadAvailable('user-id')).toEqual(
           expectedResult,
         );
