@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from '@opensearch-project/opensearch';
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
+import { Document } from '@prisma/client';
 import { DocumentDto } from '../document/dto/response/document.dto';
 import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -58,8 +59,6 @@ export class SearchService {
       },
     });
 
-    this.logger.debug(`result: ${JSON.stringify(result.body.hits.hits)}`);
-
     const documentIds = result.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
@@ -77,50 +76,50 @@ export class SearchService {
     return documents.map((document) => new DocumentDto(document));
   }
 
-  async searchByText(uid: string, query: string): Promise<DocumentDto[]> {
+  async searchByText(
+    uid: string,
+    query: string,
+    limit: number,
+    offset: number,
+  ): Promise<DocumentDto[]> {
     const user = await this.userService.findByUid(uid);
-    const result = await this.textSearch(query, user.id);
+    const result = await this.textSearch(query, user.id, limit, offset);
 
-    const documentIds = result.body.hits.hits.map(
+    const documentIds: bigint[] = result.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
-
-    this.logger.debug(`text search document ids: ${documentIds}`);
 
     const documents = await this.prisma.document.findMany({
       where: { id: { in: documentIds } },
       include: { tags: true },
     });
 
-    // documentId 순서대로 정렬
-    documents.sort((a, b) => {
-      return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
-    });
+    this.sortDocumentsBySearchResult(documentIds, documents);
 
     return documents.map((document) => new DocumentDto(document));
   }
 
-  async searchByVector(uid: string, query: string): Promise<DocumentDto[]> {
+  async searchByVector(
+    uid: string,
+    query: string,
+    limit: number,
+    offset: number,
+  ): Promise<DocumentDto[]> {
     const user = await this.userService.findByUid(uid);
     const queryVector = await this.openAiService.getEmbedding(query);
 
-    const result = await this.vectorSearch(queryVector, user.id);
+    const result = await this.vectorSearch(queryVector, user.id, limit, offset);
 
-    const documentIds = result.body.hits.hits.map(
+    const documentIds: bigint[] = result.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
-
-    this.logger.debug(`vector search document ids: ${documentIds}`);
 
     const documents = await this.prisma.document.findMany({
       where: { id: { in: documentIds } },
       include: { tags: true },
     });
 
-    // documentId 순서대로 정렬
-    documents.sort((a, b) => {
-      return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
-    });
+    this.sortDocumentsBySearchResult(documentIds, documents);
 
     return documents.map((document) => new DocumentDto(document));
   }
@@ -132,21 +131,12 @@ export class SearchService {
     const vectorResult = await this.vectorSearch(queryVector, user.id);
     const textResult = await this.textSearch(query, user.id);
 
-    const scores = this.computeRRFScores(
-      vectorResult.body.hits.hits,
-      textResult.body.hits.hits,
-    );
-
     const vectorDocumentIds: bigint[] = vectorResult.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
     const textDocumentIds: bigint[] = textResult.body.hits.hits.map(
       (hit) => hit._source.document_id,
     );
-
-    this.logger.debug(`vector search document ids: ${vectorDocumentIds}`);
-    this.logger.debug(`text search document ids: ${textDocumentIds}`);
-
     const documentIds = [
       ...new Set([...vectorDocumentIds, ...textDocumentIds]),
     ];
@@ -155,6 +145,11 @@ export class SearchService {
       where: { id: { in: documentIds } },
       include: { tags: true },
     });
+
+    const scores = this.computeRRFScores(
+      vectorResult.body.hits.hits,
+      textResult.body.hits.hits,
+    );
 
     // sort by score in descending order
     documents.sort((a, b) => {
@@ -188,7 +183,6 @@ export class SearchService {
           },
         }),
       ]);
-      this.logger.log(`documentId: ${documentId} deleted from index`);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -219,9 +213,26 @@ export class SearchService {
     return scores;
   }
 
-  private async textSearch(query: string, userId: bigint) {
+  private sortDocumentsBySearchResult(
+    searchResultDocumentIds: bigint[],
+    documents: Document[],
+  ) {
+    const idIndexMap = new Map<bigint, number>();
+    searchResultDocumentIds.forEach((id, index) => {
+      idIndexMap.set(BigInt(id), index);
+    });
+
+    // documentId 순서대로 정렬
+    documents.sort((a, b) => {
+      return idIndexMap.get(a.id) - idIndexMap.get(b.id);
+    });
+  }
+
+  private async textSearch(query: string, userId: bigint, size = 20, from = 0) {
     return this.client.search({
       index: this.documentIndex,
+      size,
+      from,
       body: {
         _source: [
           'title',
@@ -242,9 +253,16 @@ export class SearchService {
     });
   }
 
-  private async vectorSearch(queryVector: number[], userId: bigint) {
+  private async vectorSearch(
+    queryVector: number[],
+    userId: bigint,
+    size = 20,
+    from = 0,
+  ) {
     return this.client.search({
       index: this.embeddingIndex,
+      size,
+      from,
       body: {
         _source: ['document_id', 'user_id', 'document_type'],
         query: {
