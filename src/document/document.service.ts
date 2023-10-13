@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -292,6 +293,10 @@ export class DocumentService {
     const user = await this.userService.findByUid(uid);
     const documentDtos: DocumentDto[] = [];
 
+    const userFileStorageSize = this.userService.getUserFileStorageSize(
+      user.role,
+    );
+
     for (const file of files) {
       // multer가 latin1로 인코딩해서 보내줌. utf8로 변환
       file.originalname = Buffer.from(file.originalname, 'latin1').toString(
@@ -302,6 +307,16 @@ export class DocumentService {
       const docId = uuid();
 
       try {
+        const totalFileSize = await this.userService.getTotalFileSize(uid);
+        const remainingStorageSize = userFileStorageSize - totalFileSize;
+
+        if (remainingStorageSize < file.size) {
+          this.logger.error(
+            `Not enough storage. remaining: ${remainingStorageSize}, required: ${file.size}`,
+          );
+          throw new BadRequestException(`Not enough storage.`);
+        }
+
         await this.awsService.putDocument(docId, file, base64filename);
         const documentType = this.getDocumentType(file.mimetype);
         const document = await this.prisma.document.create({
@@ -327,7 +342,7 @@ export class DocumentService {
         documentDtos.push(new DocumentDto(document));
       } catch (error) {
         this.logger.error(error);
-        throw new InternalServerErrorException('upload failed');
+        throw error;
       }
     }
     return documentDtos;
