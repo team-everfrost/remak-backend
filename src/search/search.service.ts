@@ -68,10 +68,7 @@ export class SearchService {
       include: { tags: true },
     });
 
-    // documentId 순서대로 정렬
-    documents.sort((a, b) => {
-      return documentIds.indexOf(a.id) - documentIds.indexOf(b.id);
-    });
+    this.sortDocumentsBySearchResult(documentIds, documents);
 
     return documents.map((document) => new DocumentDto(document));
   }
