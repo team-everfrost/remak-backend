@@ -106,7 +106,7 @@ export class SearchService {
     offset: number,
   ): Promise<DocumentDto[]> {
     const user = await this.userService.findByUid(uid);
-    const queryVector = await this.openAiService.getEmbedding(query);
+    const queryVector = await this.getQueryVector(query);
 
     const result = await this.vectorSearch(queryVector, user.id, limit, offset);
 
@@ -126,7 +126,7 @@ export class SearchService {
 
   async searchByHybrid(uid: string, query: string) {
     const user = await this.userService.findByUid(uid);
-    const queryVector = await this.openAiService.getEmbedding(query);
+    const queryVector = await this.getQueryVector(query);
 
     const vectorResult = await this.vectorSearch(queryVector, user.id);
     const textResult = await this.textSearch(query, user.id);
@@ -279,5 +279,33 @@ export class SearchService {
         },
       },
     });
+  }
+
+  private async getQueryVector(query: string): Promise<number[]> {
+    const cachedQueryVector = await this.getCachedQueryVector(query);
+    if (cachedQueryVector) return cachedQueryVector;
+
+    // 캐싱된 vector가 없으면 Embedding API 호출 및 캐싱
+    const queryVector = await this.openAiService.getEmbedding(query);
+    await this.saveQueryVector(query, queryVector);
+    return queryVector;
+  }
+
+  private async getCachedQueryVector(query: string): Promise<number[]> {
+    // DB에 저장된 vector가 있는지 확인
+    const item: { vector: string }[] = await this.prisma.$queryRaw`
+        select vector::text
+        from embedded_query
+        where query = ${query}
+    `;
+
+    return item.length > 0 ? (JSON.parse(item[0].vector) as number[]) : null;
+  }
+
+  private async saveQueryVector(query: string, vector: number[]) {
+    await this.prisma.$queryRaw`
+    insert into embedded_query (query, vector)
+    values (${query}, ${vector})
+    `;
   }
 }
