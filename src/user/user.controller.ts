@@ -16,7 +16,7 @@ export class UserController {
 
   @Get()
   findOne(@GetUid() uid: string): Promise<UserDto> {
-    return this.userService.findByUid(uid);
+    return this.userService.findOne(uid);
   }
 
   @Patch()

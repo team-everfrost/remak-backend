@@ -20,6 +20,18 @@ export class UserService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async findOne(uid: string): Promise<UserDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { uid },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with uid ${uid} not found`);
+    }
+
+    return new UserDto(user);
+  }
+
   async findByUid(uid: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { uid },
