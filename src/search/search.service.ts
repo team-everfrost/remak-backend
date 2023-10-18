@@ -241,7 +241,12 @@ export class SearchService {
         query: {
           bool: {
             must: [
-              { multi_match: { query, fields: ['title', 'content'] } },
+              {
+                multi_match: {
+                  query,
+                  fields: ['title', 'title.autocomplete', 'content'],
+                },
+              },
               { term: { user_id: userId } },
             ],
           },
