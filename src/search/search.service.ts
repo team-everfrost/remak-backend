@@ -121,7 +121,7 @@ export class SearchService {
     return documents.map((document) => new DocumentDto(document));
   }
 
-  async searchByHybrid(uid: string, query: string) {
+  async searchByTextAndVector(uid: string, query: string) {
     const user = await this.userService.findByUid(uid);
     const queryVector = await this.getQueryVector(query);
 

@@ -93,6 +93,6 @@ export class SearchController {
     @GetUid() uid: string,
     @Query('query') query: string,
   ): Promise<DocumentDto[]> {
-    return this.searchService.searchByHybrid(uid, query);
+    return this.searchService.searchByTextAndVector(uid, query);
   }
 }
