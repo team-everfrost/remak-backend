@@ -140,6 +140,8 @@ model Email {
   signupCode String  @map("signup_code")
   verified   Boolean @default(false)
 
+  resetCode String? @map("reset_code")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

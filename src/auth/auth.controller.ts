@@ -13,6 +13,7 @@ import { EmailDto } from './dto/request/email.dto';
 import { SignupDto } from './dto/request/signup.dto';
 import { VerifyCodeDto } from './dto/request/verify-code.dto';
 import { Token } from './dto/response/token.dto';
+import { ResetPasswordDto } from './dto/request/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,6 +42,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   sendSignupCode(@Body() emailDto: EmailDto): Promise<void> {
     return this.authService.sendSignupCode(emailDto);
+  }
+
+  @Post('/reset-password-code')
+  @HttpCode(HttpStatus.OK)
+  sendResetCode(@Body() emailDto: EmailDto): Promise<void> {
+    return this.authService.sendResetCode(emailDto);
+  }
+
+  @Post('/reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<void> {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Post('/verify-code')

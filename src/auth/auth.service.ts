@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -13,6 +14,7 @@ import { AwsService } from '../aws/aws.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/request/auth.dto';
 import { EmailDto } from './dto/request/email.dto';
+import { ResetPasswordDto } from './dto/request/reset-password.dto';
 import { SignupDto } from './dto/request/signup.dto';
 import { VerifyCodeDto } from './dto/request/verify-code.dto';
 import { Token } from './dto/response/token.dto';
@@ -84,7 +86,7 @@ export class AuthService {
 
     // TODO: rate limit
 
-    const signupCode = this.getSignupCode();
+    const signupCode = this.getRandomCode();
     this.logger.debug(`signupCode: ${signupCode}`);
 
     await this.awsService.sendSignupEmail(email, signupCode);
@@ -123,6 +125,63 @@ export class AuthService {
     });
   }
 
+  async sendResetCode(emailDto: EmailDto): Promise<void> {
+    const { email } = emailDto;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('No such user');
+    }
+
+    const emailData = await this.prisma.email.findUnique({ where: { email } });
+
+    if (!emailData) {
+      throw new NotFoundException('No such email');
+    }
+
+    const resetCode = this.getRandomCode();
+    this.logger.debug(`resetCode: ${resetCode}`);
+    await this.awsService.sendResetEmail(email, resetCode);
+
+    await this.prisma.email.update({
+      where: { email },
+      data: { resetCode },
+    });
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    const { email, resetCode, newPassword } = resetPasswordDto;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('No such user');
+    }
+
+    const emailData = await this.prisma.email.findUnique({ where: { email } });
+
+    if (!emailData) {
+      throw new NotFoundException('No such email');
+    }
+
+    if (emailData.resetCode !== resetCode) {
+      throw new ForbiddenException('Invalid reset code');
+    }
+
+    // resetCode 재사용 방지
+    await this.prisma.email.update({
+      where: { email },
+      data: { resetCode: null },
+    });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
+  }
+
   async checkEmail(emailDto: EmailDto) {
     const { email } = emailDto;
 
@@ -153,7 +212,7 @@ export class AuthService {
     return { accessToken };
   }
 
-  getSignupCode(): string {
+  getRandomCode(): string {
     return randomInt(10 ** 5, 10 ** 6).toString();
   }
 }

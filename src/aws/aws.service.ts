@@ -193,6 +193,26 @@ export class AwsService {
     }
   }
 
+  async sendResetEmail(toAddress: string, resetCode: string): Promise<void> {
+    const fromAddress = this.configService.get<string>('AWS_SES_FROM_ADDRESS');
+    const command = this.createPasswordResetSendEmailCommand(
+      toAddress,
+      fromAddress,
+      resetCode,
+    );
+    try {
+      const res = this.sesClient.send(command);
+      this.logger.log(
+        `Sent password reset email to ${toAddress}. res: ${JSON.stringify(
+          res,
+        )}`,
+      );
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
+  }
+
   private createSignupSendEmailCommand(
     toAddress: string,
     fromAddress: string,
@@ -211,6 +231,31 @@ export class AwsService {
           Html: {
             Charset: 'UTF-8',
             Data: `<b>회원가입 코드는 ${signupCode} 입니다</b>`,
+          },
+        },
+      },
+      Source: fromAddress,
+    });
+  }
+
+  private createPasswordResetSendEmailCommand(
+    toAddress: string,
+    fromAddress: string,
+    resetCode: string,
+  ): SendEmailCommand {
+    return new SendEmailCommand({
+      Destination: {
+        ToAddresses: [toAddress],
+      },
+      Message: {
+        Subject: {
+          Charset: 'UTF-8',
+          Data: 'Remak 비밀번호 재설정 코드',
+        },
+        Body: {
+          Html: {
+            Charset: 'UTF-8',
+            Data: `<b>비밀번호 재설정 코드는 ${resetCode} 입니다</b>`,
           },
         },
       },
