@@ -244,7 +244,7 @@ export class SearchService {
               {
                 multi_match: {
                   query,
-                  fields: ['title', 'title.autocomplete', 'content'],
+                  fields: ['title.autocomplete', 'content'],
                 },
               },
               { term: { user_id: userId } },
