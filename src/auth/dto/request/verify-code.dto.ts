@@ -9,7 +9,7 @@ export class VerifyCodeDto {
   @IsNotEmpty()
   @ApiProperty({
     description: '6자리 랜덤 인증 코드',
-    example: 'a1b2c3',
+    example: '123456',
   })
-  signupCode: string;
+  code: string;
 }
