@@ -8,7 +8,7 @@ import {
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
-const password = bcrypt.hashSync('password', 10);
+const password = bcrypt.hashSync('password123', 10);
 
 async function createUserWithDocuments(index: number, numDocs: number) {
   const documentData = Array.from({ length: numDocs }, (_, i) => ({
