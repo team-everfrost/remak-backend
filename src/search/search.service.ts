@@ -158,7 +158,7 @@ export class SearchService {
 
   async deleteIndexedDocument(documentId: bigint) {
     try {
-      Promise.all([
+      await Promise.all([
         this.client.deleteByQuery({
           index: this.documentIndex,
           body: {
@@ -306,8 +306,8 @@ export class SearchService {
 
   private async saveQueryVector(query: string, vector: number[]) {
     await this.prisma.$queryRaw`
-    insert into embedded_query (query, vector)
-    values (${query}, ${vector})
+        insert into embedded_query (query, vector)
+        values (${query}, ${vector})
     `;
   }
 }

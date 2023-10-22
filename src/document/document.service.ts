@@ -555,7 +555,7 @@ export class DocumentService {
   }
 
   private async deleteAllObjectsInS3(docId: string): Promise<void> {
-    Promise.all([
+    await Promise.all([
       this.awsService.deleteDocument(docId),
       this.awsService.deleteThumbnail(docId),
       this.awsService.deleteWebpageImages(docId),
