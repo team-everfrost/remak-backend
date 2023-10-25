@@ -227,6 +227,97 @@ export class AuthService {
     }
   }
 
+  async sendWithdrawCode(uid: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { uid } });
+
+    if (!user) {
+      throw new NotFoundException('No such user');
+    }
+
+    const email = user.email;
+
+    const emailData = await this.prisma.email.findUnique({ where: { email } });
+
+    if (!emailData) {
+      throw new NotFoundException('No such email');
+    }
+
+    const withdrawCode = this.getRandomCode();
+    this.logger.debug(`withdrawCode: ${withdrawCode}`);
+    await this.awsService.sendEmail(
+      email,
+      withdrawCode,
+      WITHDRAW_EMAIL_SUBJECT,
+      WITHDRAW_EMAIL_BODY,
+    );
+
+    await this.prisma.email.update({
+      where: { email },
+      data: { withdrawCode },
+    });
+  }
+
+  async verifyWithdrawCode(uid: string, code: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { uid } });
+
+    if (!user) {
+      throw new NotFoundException('No such user');
+    }
+
+    const email = user.email;
+
+    const emailData = await this.prisma.email.findUnique({
+      where: { email },
+    });
+
+    if (!emailData) {
+      throw new NotFoundException('No such email');
+    }
+
+    this.logger.debug(`withdrawCode: ${emailData.withdrawCode}, code: ${code}`);
+
+    if (emailData.withdrawCode !== code) {
+      throw new ForbiddenException('Invalid withdraw code');
+    }
+
+    // 인증 성공. 이후 withdraw() 호출
+    this.logger.debug(`withdrawCode verified: ${email}`);
+    await this.prisma.email.update({
+      where: { email },
+      data: { withdrawVerified: true },
+    });
+  }
+
+  async withdraw(uid: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { uid } });
+
+    if (!user) {
+      throw new NotFoundException('No such user');
+    }
+
+    const emailData = await this.prisma.email.findUnique({
+      where: { email: user.email },
+    });
+
+    if (!emailData) {
+      throw new NotFoundException('No such email');
+    }
+
+    if (!emailData.withdrawVerified) {
+      throw new ForbiddenException('Withdraw code not verified');
+    }
+
+    try {
+      await this.prisma.$transaction([
+        this.prisma.user.delete({ where: { uid } }),
+        this.prisma.email.delete({ where: { email: user.email } }),
+      ]);
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
+  }
+
   async checkEmail(emailDto: EmailDto) {
     const { email } = emailDto;
 

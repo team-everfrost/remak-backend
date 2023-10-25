@@ -7,6 +7,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { GetUid } from '../decorators/get-uid.decorator';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/request/auth.dto';
 import { EmailDto } from './dto/request/email.dto';
@@ -25,6 +27,7 @@ export class AuthController {
 
   @Post('/local/logout')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   logout(): Promise<void> {
     return this.authService.logout();
@@ -66,6 +69,46 @@ export class AuthController {
     return this.authService.resetPassword(authDto);
   }
 
+  @Post('/withdraw-code')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  sendWithdrawCode(@GetUid() uid: string): Promise<void> {
+    return this.authService.sendWithdrawCode(uid);
+  }
+
+  @Post('/verify-withdraw-code')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          example: '123456',
+        },
+      },
+    },
+  })
+  verifyWithdrawCode(
+    @GetUid() uid: string,
+    @Body()
+    verifyCode: { code: string },
+  ): Promise<void> {
+    return this.authService.verifyWithdrawCode(uid, verifyCode.code);
+  }
+
+  @Post('/withdraw')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  withdraw(@GetUid() uid: string): Promise<void> {
+    return this.authService.withdraw(uid);
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Post('/check-email')
   @HttpCode(HttpStatus.OK)
   checkEmail(@Body() emailDto: EmailDto): Promise<void> {

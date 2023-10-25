@@ -133,7 +133,6 @@ model EmbeddedText {
   @@map("embedded_text")
 }
 
-// 나중에 인메모리 DB로 바꿀 것
 model Email {
   id    BigInt @id @default(autoincrement())
   email String @unique
@@ -143,6 +142,9 @@ model Email {
 
   resetCode     String? @map("reset_code")
   resetVerified Boolean @default(false) @map("reset_verified") // 비밀번호 변경을 위한 코드 확인 여부
+
+  withdrawCode     String? @map("withdraw_code")
+  withdrawVerified Boolean @default(false) @map("withdraw_verified") // 회원탈퇴를 위한 코드 확인 여부
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
