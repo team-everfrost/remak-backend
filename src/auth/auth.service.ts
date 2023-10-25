@@ -11,6 +11,14 @@ import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'node:crypto';
 import { AwsService } from '../aws/aws.service';
+import {
+  RESET_EMAIL_BODY,
+  RESET_EMAIL_SUBJECT,
+  SIGNUP_EMAIL_BODY,
+  SIGNUP_EMAIL_SUBJECT,
+  WITHDRAW_EMAIL_BODY,
+  WITHDRAW_EMAIL_SUBJECT,
+} from '../aws/email.const';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/request/auth.dto';
 import { EmailDto } from './dto/request/email.dto';
@@ -60,7 +68,12 @@ export class AuthService {
     const signupCode = this.getRandomCode();
     this.logger.debug(`signupCode: ${signupCode}`);
 
-    await this.awsService.sendSignupEmail(email, signupCode);
+    await this.awsService.sendEmail(
+      email,
+      signupCode,
+      SIGNUP_EMAIL_SUBJECT,
+      SIGNUP_EMAIL_BODY,
+    );
 
     // TODO: change to redis
     await this.prisma.email.upsert({
@@ -140,7 +153,12 @@ export class AuthService {
 
     const resetCode = this.getRandomCode();
     this.logger.debug(`resetCode: ${resetCode}`);
-    await this.awsService.sendResetEmail(email, resetCode);
+    await this.awsService.sendEmail(
+      email,
+      resetCode,
+      RESET_EMAIL_SUBJECT,
+      RESET_EMAIL_BODY,
+    );
 
     await this.prisma.email.update({
       where: { email },

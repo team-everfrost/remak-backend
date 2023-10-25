@@ -6,8 +6,8 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger } from '@nestjs/common';
@@ -175,35 +175,25 @@ export class AwsService {
     );
   }
 
-  async sendSignupEmail(toAddress: string, signupCode: string): Promise<void> {
+  async sendEmail(
+    toAddress: string,
+    code: string,
+    subject: string,
+    bodyTemplate: string,
+  ): Promise<void> {
     const fromAddress = this.configService.get<string>('AWS_SES_FROM_ADDRESS');
-    const command = this.createSignupSendEmailCommand(
+    const command = this.createSendEmailCommand(
       toAddress,
       fromAddress,
-      signupCode,
+      code,
+      subject,
+      bodyTemplate,
     );
-    try {
-      const res = this.sesClient.send(command);
-      this.logger.log(
-        `Sent signup email to ${toAddress}. res: ${JSON.stringify(res)}`,
-      );
-    } catch (e) {
-      this.logger.error(e);
-      throw e;
-    }
-  }
 
-  async sendResetEmail(toAddress: string, resetCode: string): Promise<void> {
-    const fromAddress = this.configService.get<string>('AWS_SES_FROM_ADDRESS');
-    const command = this.createPasswordResetSendEmailCommand(
-      toAddress,
-      fromAddress,
-      resetCode,
-    );
     try {
       const res = this.sesClient.send(command);
       this.logger.log(
-        `Sent password reset email to ${toAddress}. res: ${JSON.stringify(
+        `Sent email with subject "${subject}" to ${toAddress}. res: ${JSON.stringify(
           res,
         )}`,
       );
@@ -213,49 +203,21 @@ export class AwsService {
     }
   }
 
-  private createSignupSendEmailCommand(
+  private createSendEmailCommand(
     toAddress: string,
     fromAddress: string,
-    signupCode: string,
+    code: string,
+    subject: string,
+    bodyTemplate: string,
   ): SendEmailCommand {
     return new SendEmailCommand({
-      Destination: {
-        ToAddresses: [toAddress],
-      },
+      Destination: { ToAddresses: [toAddress] },
       Message: {
-        Subject: {
-          Charset: 'UTF-8',
-          Data: 'Remak 회원가입 코드',
-        },
+        Subject: { Charset: 'UTF-8', Data: subject },
         Body: {
           Html: {
             Charset: 'UTF-8',
-            Data: `<b>회원가입 코드는 ${signupCode} 입니다</b>`,
-          },
-        },
-      },
-      Source: fromAddress,
-    });
-  }
-
-  private createPasswordResetSendEmailCommand(
-    toAddress: string,
-    fromAddress: string,
-    resetCode: string,
-  ): SendEmailCommand {
-    return new SendEmailCommand({
-      Destination: {
-        ToAddresses: [toAddress],
-      },
-      Message: {
-        Subject: {
-          Charset: 'UTF-8',
-          Data: 'Remak 비밀번호 재설정 코드',
-        },
-        Body: {
-          Html: {
-            Charset: 'UTF-8',
-            Data: `<b>비밀번호 재설정 코드는 ${resetCode} 입니다</b>`,
+            Data: bodyTemplate.replace('%%CODE%%', code),
           },
         },
       },
