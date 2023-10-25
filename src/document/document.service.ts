@@ -78,63 +78,6 @@ export class DocumentService {
     return new DocumentDto(document);
   }
 
-  async findByEmbedding(
-    uid: string,
-    query: string,
-    limit: number,
-    offset: number,
-  ): Promise<DocumentDto[]> {
-    const user = await this.userService.findByUid(uid);
-    const vector = await this.getVectorFromQuery(query);
-    const documentsWithVector: any = await this.fetchDocumentsWithVector(
-      user.id,
-      vector,
-      limit,
-      offset,
-    );
-    return this.transformDocumentsWithVectorToDto(documentsWithVector);
-  }
-
-  async findByFullText(
-    uid: string,
-    query: string,
-    cursor: Date,
-    docId: string,
-    take: number,
-  ): Promise<DocumentDto[]> {
-    cursor = cursor ? cursor : new Date();
-    take = take > 20 ? 20 : take;
-
-    const user = await this.userService.findByUid(uid);
-    const documents = await this.prisma.document.findMany({
-      where: {
-        AND: [
-          { userId: user.id },
-          {
-            OR: [
-              { updatedAt: { lt: cursor } },
-              {
-                updatedAt: cursor,
-                docId: { lt: docId },
-              },
-            ],
-          },
-          {
-            OR: [
-              { title: { contains: query } },
-              { content: { contains: query } },
-            ],
-          },
-        ],
-      },
-      include: { tags: true },
-      orderBy: [{ updatedAt: 'desc' }],
-      take,
-    });
-
-    return documents.map((document) => new DocumentDto(document));
-  }
-
   async createMemo(uid: string, memoDto: MemoDto): Promise<DocumentDto> {
     const user = await this.userService.findByUid(uid);
 
@@ -147,9 +90,6 @@ export class DocumentService {
       },
       include: { tags: true },
     });
-
-    // 임베딩 요청
-    await this.requestEmbed(document.id);
 
     return new DocumentDto(document);
   }
@@ -180,9 +120,6 @@ export class DocumentService {
       data: { ...memoDto },
       include: { tags: true },
     });
-
-    // 임베딩 요청
-    await this.requestEmbed(document.id);
 
     return new DocumentDto(updatedDocument);
   }
@@ -476,68 +413,6 @@ export class DocumentService {
                 group by t.id
                 having count(dt."A") = 1
       `;
-  }
-
-  private async getVectorFromQuery(query: string): Promise<string> {
-    // DB에 저장된 vector가 있는지 확인
-    const item: { vector: string }[] = await this.prisma.$queryRaw`
-        select vector::text
-        from embedded_query
-        where query = ${query}
-    `;
-
-    this.logger.debug(`item: ${JSON.stringify(item)}`);
-
-    // DB에 저장된 vector가 없으면 OpenAI API로 vector를 생성
-    if (item.length === 0) {
-      const vector: number[] = await this.openAiService.getEmbedding(query);
-      const vectorString = JSON.stringify(vector);
-      this.logger.debug(`vector: ${vectorString}`);
-      await this.prisma.$queryRaw`
-          insert into embedded_query (query, vector)
-          values (${query}, ${vector})
-      `;
-      return vectorString;
-    }
-
-    return item[0].vector;
-  }
-
-  private async fetchDocumentsWithVector(
-    userId: bigint,
-    vector: string,
-    limit: number,
-    offset: number,
-  ) {
-    return this.prisma.$queryRaw`
-        select d.*, array_agg(t.name) as tags, subquery.min_distance
-        from document as d
-                 join ( select document_id, min(vector <#> ${vector}::vector) as min_distance
-                        from embedded_text
-                        where user_id = ${userId}
-                        group by document_id ) as subquery on d.id = subquery.document_id
-                 left join "_DocumentToTag" as dt on d.id = dt."A"
-                 left join tag as t on dt."B" = t.id
-        group by d.id, subquery.min_distance
-        order by subquery.min_distance
-        limit ${limit} offset ${offset};
-    `;
-  }
-
-  private transformDocumentsWithVectorToDto(rawItems: any[]): DocumentDto[] {
-    return rawItems.map((item) => ({
-      docId: item.doc_id,
-      title: item.title,
-      type: item.type,
-      url: item.url,
-      content: item.content,
-      summary: item.summary,
-      status: item.status,
-      thumbnailUrl: item.thumbnail_url,
-      createdAt: item.created_at,
-      updatedAt: item.updated_at,
-      tags: item.tags,
-    }));
   }
 
   private getDocumentType(mimetype: string): DocumentType {
