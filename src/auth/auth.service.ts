@@ -211,7 +211,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     try {
-      this.prisma.$transaction([
+      await this.prisma.$transaction([
         this.prisma.user.update({
           where: { email },
           data: { password: hashedPassword },
