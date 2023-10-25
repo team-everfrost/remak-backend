@@ -10,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentType, Prisma, Status, Tag } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import { AwsService } from '../aws/aws.service';
-import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchService } from '../search/search.service';
 import { UserService } from '../user/user.service';
@@ -24,7 +23,6 @@ export class DocumentService {
 
   constructor(
     private prisma: PrismaService,
-    private openAiService: OpenAiService,
     private awsService: AwsService,
     private userService: UserService,
     private configService: ConfigService,
