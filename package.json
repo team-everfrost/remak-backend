@@ -38,6 +38,7 @@
     "@nestjs/throttler": "^5.0.1",
     "@opensearch-project/opensearch": "^2.4.0",
     "@prisma/client": "^5.5.2",
+    "@sentry/node": "^7.77.0",
     "@types/multer": "^1.4.9",
     "@types/uuid": "^9.0.6",
     "bcrypt": "^5.1.1",
