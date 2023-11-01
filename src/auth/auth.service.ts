@@ -339,7 +339,7 @@ export class AuthService {
       {
         secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
         // TODO: 리프레시 토큰 구현 후 만료 시간 조정
-        expiresIn: 60 * 60 * 24 * 7,
+        expiresIn: 60 * 60 * 24 * 30,
       },
     );
 
