@@ -406,7 +406,7 @@ export class DocumentService {
       : await this.prisma.$queryRaw`
                 select t.*
                 from tag as t
-                         join "_DocumentToTag" as dt on t.id = dt."B"
+                          join "_DocumentToTag" as dt on t.id = dt."B"
                 where dt."B" in (${Prisma.join(tagIds)})
                 group by t.id
                 having count(dt."A") = 1
