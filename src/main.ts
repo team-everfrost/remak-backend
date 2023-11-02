@@ -2,9 +2,9 @@ import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as Sentry from '@sentry/node';
+import { ProfilingIntegration } from '@sentry/profiling-node';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './filters/http-exception.filter';
-import { TransformInterceptor } from './interceptors/transform.interceptor';
 
 async function bootstrap() {
   (BigInt.prototype as any).toJSON = function () {
@@ -14,6 +14,23 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
+
+  Sentry.init({
+    dsn: configService.get<string>('SENTRY_DSN'),
+    integrations: [
+      // enable HTTP calls tracing
+      new Sentry.Integrations.Http({ tracing: true }),
+      // enable Express.js middleware tracing
+      new Sentry.Integrations.Express({
+        app: app.getHttpAdapter().getInstance(),
+      }),
+      new ProfilingIntegration(),
+    ],
+    // Performance Monitoring
+    tracesSampleRate: 1.0,
+    // Set sampling rate for profiling - this is relative to tracesSampleRate
+    profilesSampleRate: 1.0,
+  });
 
   // CORS
   app.enableCors({
@@ -49,12 +66,6 @@ async function bootstrap() {
       },
     }),
   );
-
-  // Filters
-  app.useGlobalFilters(new HttpExceptionFilter());
-
-  // Interceptors
-  app.useGlobalInterceptors(new TransformInterceptor());
 
   const port = configService.get<number>('PORT', 3000);
   await app.listen(port);
