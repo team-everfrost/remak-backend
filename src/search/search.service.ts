@@ -234,6 +234,7 @@ export class SearchService {
         _source: [
           'title',
           'content',
+          'summary',
           'user_id',
           'document_id',
           'document_type',
@@ -244,7 +245,7 @@ export class SearchService {
               {
                 multi_match: {
                   query,
-                  fields: ['title.autocomplete', 'content'],
+                  fields: ['title.autocomplete', 'content', 'summary'],
                 },
               },
               { term: { user_id: userId } },
