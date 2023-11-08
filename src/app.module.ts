@@ -15,6 +15,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { SearchModule } from './search/search.module';
 import { TagModule } from './tag/tag.module';
 import { UserModule } from './user/user.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { UserModule } from './user/user.module';
         limit: 30,
       },
     ]),
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [

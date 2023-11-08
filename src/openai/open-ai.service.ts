@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import { Stream } from 'openai/streaming';
+import { documentChatPrompt } from './prompt';
 
 @Injectable()
 export class OpenAiService {
@@ -11,6 +13,38 @@ export class OpenAiService {
     this.openai = new OpenAI({
       apiKey: configService.get<string>('OPENAI_API_KEY'),
     });
+  }
+
+  async chat(
+    query: string,
+    content: string,
+  ): Promise<Stream<OpenAI.Chat.Completions.ChatCompletionChunk>> {
+    try {
+      const completionStream = await this.openai.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: documentChatPrompt,
+          },
+          {
+            role: 'user',
+            content: query,
+          },
+          {
+            role: 'user',
+            content: content,
+          },
+        ],
+        // TODO: At Dec 11, 2023, gpt-3.5-turbo will point this 1106 model
+        model: 'gpt-3.5-turbo-1106',
+        stream: true,
+      });
+
+      return completionStream;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getEmbedding(text: string): Promise<number[]> {
