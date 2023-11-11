@@ -89,6 +89,8 @@ export class DocumentService {
       include: { tags: true },
     });
 
+    await this.requestEmbed(document.id);
+
     return new DocumentDto(document);
   }
 
@@ -115,9 +117,11 @@ export class DocumentService {
 
     const updatedDocument = await this.prisma.document.update({
       where: { id: document.id },
-      data: { ...memoDto },
+      data: { ...memoDto, status: Status.EMBED_PENDING },
       include: { tags: true },
     });
+
+    await this.requestEmbed(document.id);
 
     return new DocumentDto(updatedDocument);
   }
