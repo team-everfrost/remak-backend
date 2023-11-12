@@ -284,7 +284,31 @@ export class SearchService {
     });
   }
 
-  private async getQueryVector(query: string): Promise<number[]> {
+  public async vectorSearchWithoutCollapse(
+    queryVector: number[],
+    userId: bigint,
+    size = 10,
+    from = 0,
+  ) {
+    return this.client.search({
+      index: this.embeddingIndex,
+      size,
+      from,
+      body: {
+        _source: ['document_id', 'user_id', 'chapter', 'content'],
+        query: {
+          bool: {
+            must: [
+              { knn: { vector: { vector: queryVector, k: 50 } } },
+              { term: { user_id: userId } },
+            ],
+          },
+        },
+      },
+    });
+  }
+
+  public async getQueryVector(query: string): Promise<number[]> {
     const cachedQueryVector = await this.getCachedQueryVector(query);
     if (cachedQueryVector) return cachedQueryVector;
 
