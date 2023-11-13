@@ -42,7 +42,5 @@ export class ChatController {
 
     this.logger.debug(`Stream ended.`);
     res.end();
-
-    res.end();
   }
 }
