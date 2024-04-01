@@ -23,7 +23,6 @@ model User {
   role     Role    @default(BASIC)
 
   documents Document[]
-  socials   Social[]
 
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
@@ -32,20 +31,6 @@ model User {
   Collection   Collection[]
 
   @@map("users")
-}
-
-model Social {
-  id         BigInt @id @default(autoincrement())
-  providerId String @map("provider_id")
-  provider   String
-
-  userId BigInt @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("social")
 }
 
 model Document {
