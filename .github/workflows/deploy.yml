@@ -21,7 +21,7 @@ jobs:
       - name: Prepare deploy script with environment variable
         run: |
           mkdir -p scripts
-          echo "doppler run --token ${DOPPLER_TOKEN} -p remak -c prd -- pm2 reload ecosystem.json" > scripts/deploy.sh
+          echo "doppler run --token ${DOPPLER_TOKEN} -p remak -c prd -- pm2 reload /home/ec2-user/deploy/ecosystem.json" > scripts/deploy.sh
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
         shell: bash
