@@ -1,0 +1,16 @@
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /home/ec2-user/deploy
+    overwrite: yes
+permissions:
+  - object: /home/ec2-user/deploy
+    owner: ec2-user
+    mode: 755
+hooks:
+  ApplicationStart:
+    - location: ./scripts/deploy.sh
+      timeout: 300
+      runas: ec2-user
