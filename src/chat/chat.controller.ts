@@ -12,6 +12,7 @@ import { QueryDto } from './dto/request/query.dto';
 @ApiBearerAuth()
 export class ChatController {
   private readonly logger = new Logger(ChatController.name);
+
   constructor(private readonly chatService: ChatService) {}
 
   @Post('rag')
@@ -32,7 +33,7 @@ export class ChatController {
       query,
     );
 
-    const completions = await completionsPromise;
+    const completions = completionsPromise;
 
     res.write(`event: documents\ndata: ${JSON.stringify(documents)}\n\n`);
 

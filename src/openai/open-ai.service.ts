@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { Stream } from 'openai/streaming';
 import { darePrompt, systemPrompt } from './prompt';
+import { ChatCompletionChunk } from 'openai/resources';
 
 @Injectable()
 export class OpenAiService {
@@ -18,9 +19,9 @@ export class OpenAiService {
   async chat(
     query: string,
     context: string,
-  ): Promise<Stream<OpenAI.Chat.Completions.ChatCompletionChunk>> {
+  ): Promise<Stream<ChatCompletionChunk>> {
     try {
-      const completionStream = await this.openai.chat.completions.create({
+      return await this.openai.chat.completions.create({
         messages: [
           {
             role: 'system',
@@ -43,8 +44,6 @@ export class OpenAiService {
         model: 'gpt-3.5-turbo-1106',
         stream: true,
       });
-
-      return completionStream;
     } catch (error) {
       this.logger.error(error);
       throw error;
