@@ -1,1 +1,1 @@
-pm2 reload ecosystem.json
+doppler run -p remak -c prd -- pm2 reload ecosystem.json
