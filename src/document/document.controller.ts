@@ -237,6 +237,92 @@ export class DocumentController {
     );
   }
 
+  @Get('search/vector')
+  @ApiQuery({
+    name: 'query',
+    required: true,
+    type: String,
+    description: '임베딩 검색할 쿼리',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '한 번에 받을 문서의 개수. 최대 20개까지 가능. 기본값은 20.',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: '몇 번째 문서부터 검색 결과에 포함할지. 기본값은 0.',
+  })
+  searchByEmbedding(
+    @GetUid() uid: string,
+    @Query('query') query: string,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+  ): Promise<DocumentDto[]> {
+    return this.documentService.findByEmbedding(uid, query, limit, offset);
+  }
+
+  @Get('search/text')
+  @ApiQuery({
+    name: 'query',
+    required: true,
+    type: String,
+    description: '텍스트 검색할 쿼리',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: Date,
+    description:
+      '이전에 받은 문서들 중 마지막 문서의 updatedAt. 이 값이 없으면 현재 시간으로.',
+    example: '2021-01-01T00:00:00.000Z',
+  })
+  @ApiQuery({
+    name: 'doc-id',
+    required: false,
+    type: String,
+    description:
+      '이전에 받은 문서들 중 마지막 문서의 docId. 이 값이 없으면 가장 큰 UUID 값으로.',
+    example: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: '한 번에 받을 문서의 개수. 최대 20개까지 가능. 기본값은 20.',
+    example: 20,
+  })
+  searchByQuery(
+    @GetUid() uid: string,
+    @Query('query') query: string,
+    @Query('cursor') cursor?: Date,
+    @Query(
+      'doc-id',
+      new DefaultValuePipe('ffffffff-ffff-ffff-ffff-ffffffffffff'),
+    )
+    docId?: string,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+  ): Promise<DocumentDto[]> {
+    return this.documentService.findByText(uid, query, cursor, docId, limit);
+  }
+
+  @ApiQuery({
+    name: 'query',
+    required: true,
+    type: String,
+    description: '텍스트 검색할 쿼리',
+  })
+  @Get('search/hybrid')
+  searchByHybrid(
+    @GetUid() uid: string,
+    @Query('query') query: string,
+  ): Promise<DocumentDto[]> {
+    return this.documentService.findByTextAndEmbedding(uid, query);
+  }
+
   @Delete(':docId')
   deleteOne(
     @GetUid() uid: string,

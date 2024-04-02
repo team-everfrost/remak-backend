@@ -2,9 +2,10 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { SearchService } from '../search/search.service';
 import { UserService } from '../user/user.service';
 import { ChatService } from './chat.service';
+import { DocumentService } from '../document/document.service';
+import { AwsService } from '../aws/aws.service';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -14,7 +15,8 @@ describe('ChatService', () => {
       providers: [
         ChatService,
         OpenAiService,
-        SearchService,
+        DocumentService,
+        AwsService,
         ConfigService,
         PrismaService,
         UserService,

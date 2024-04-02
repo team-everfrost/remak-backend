@@ -12,7 +12,6 @@ import { SentryInterceptor } from './interceptors/sentry.interceptor';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
-import { SearchModule } from './search/search.module';
 import { TagModule } from './tag/tag.module';
 import { UserModule } from './user/user.module';
 import { ChatModule } from './chat/chat.module';
@@ -26,7 +25,8 @@ import { ChatModule } from './chat/chat.module';
     UserModule,
     TagModule,
     CollectionModule,
-    SearchModule,
+    // 검색엔진 기능 DB로 이관
+    // SearchModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',

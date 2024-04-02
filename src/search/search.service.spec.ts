@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { SearchService } from './search.service';
 
-describe('SearchService', () => {
+describe.skip('SearchService', () => {
   let service: SearchService;
 
   beforeEach(async () => {

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { OpenAiModule } from 'src/openai/open-ai.module';
-import { SearchModule } from 'src/search/search.module';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
+import { DocumentModule } from '../document/document.module';
 
 @Module({
-  imports: [OpenAiModule, SearchModule],
+  imports: [OpenAiModule, DocumentModule],
   controllers: [ChatController],
   providers: [ChatService],
 })

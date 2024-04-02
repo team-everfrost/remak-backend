@@ -3,10 +3,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { SearchService } from '../search/search.service';
 import { UserService } from '../user/user.service';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
+import { DocumentService } from '../document/document.service';
+import { AwsService } from '../aws/aws.service';
 
 describe('ChatController', () => {
   let controller: ChatController;
@@ -26,7 +27,8 @@ describe('ChatController', () => {
       providers: [
         ChatService,
         OpenAiService,
-        SearchService,
+        DocumentService,
+        AwsService,
         ConfigService,
         PrismaService,
         UserService,

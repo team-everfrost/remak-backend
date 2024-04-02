@@ -5,7 +5,6 @@ import { Document, DocumentType, Role, Status, User } from '@prisma/client';
 import { AwsService } from '../aws/aws.service';
 import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { SearchService } from '../search/search.service';
 import { UserService } from '../user/user.service';
 import { DocumentService } from './document.service';
 
@@ -51,7 +50,6 @@ describe('DocumentService', () => {
         DocumentService,
         ConfigService,
         UserService,
-        SearchService,
         {
           provide: OpenAiService,
           useValue: {
