@@ -2,7 +2,7 @@
   "apps": [
     {
       "name": "remak-backend",
-      "script": "../dist/src/main.js",
+      "script": "/home/ec2-user/deploy/dist/src/main.js",
       "instances": "max",
       "exec_mode": "cluster",
       "env": {
