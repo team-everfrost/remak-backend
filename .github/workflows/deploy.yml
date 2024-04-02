@@ -18,6 +18,10 @@ jobs:
           node-version: 18.x
           cache: npm
 
+      - name: Prepare environment variables
+        run: echo "DOPPLER_TOKEN=${{ secrets.DOPPLER_TOKEN }}" > .env
+        shell: bash
+
       - name: Install dependencies
         run: npm install
 
