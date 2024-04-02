@@ -18,8 +18,12 @@ jobs:
           node-version: 18.x
           cache: npm
 
-      - name: Prepare environment variables
-        run: echo "DOPPLER_TOKEN=${{ secrets.DOPPLER_TOKEN }}" > .env
+      - name: Prepare deploy script with environment variable
+        run: |
+          mkdir -p scripts
+          echo "doppler run --token ${DOPPLER_TOKEN} -p remak -c prd -- pm2 reload ../ecosystem.json" > scripts/deploy.sh
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
         shell: bash
 
       - name: Install dependencies
