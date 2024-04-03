@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import { ChatCompletionChunk } from 'openai/resources';
 import { Stream } from 'openai/streaming';
 import { darePrompt, systemPrompt } from './prompt';
-import { ChatCompletionChunk } from 'openai/resources';
 
 @Injectable()
 export class OpenAiService {
@@ -40,8 +40,7 @@ export class OpenAiService {
             content: `query: ${query}`,
           },
         ],
-        // TODO: At Dec 11, 2023, gpt-3.5-turbo will point this 1106 model
-        model: 'gpt-3.5-turbo-1106',
+        model: 'gpt-3.5-turbo',
         stream: true,
       });
     } catch (error) {
