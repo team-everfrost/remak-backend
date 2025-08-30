@@ -25,8 +25,6 @@ import { ChatModule } from './chat/chat.module';
     UserModule,
     TagModule,
     CollectionModule,
-    // 검색엔진 기능 DB로 이관
-    // SearchModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',
