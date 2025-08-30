@@ -40,7 +40,7 @@ export class OpenAiService {
             content: `query: ${query}`,
           },
         ],
-        model: 'gpt-4o',
+        model: 'gpt-5',
         stream: true,
       });
     } catch (error) {
