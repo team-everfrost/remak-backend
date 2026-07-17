@@ -10,12 +10,16 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentType, Prisma, Status, Tag } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import { AwsService } from '../aws/aws.service';
+import {
+  rewriteLegacyRemakUrl,
+  rewriteLegacyRemakUrlsInText,
+} from '../common/remak-domain';
+import { OpenAiService } from '../openai/open-ai.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 import { MemoDto } from './dto/request/memo.dto';
 import { WebpageDto } from './dto/request/webpage.dto';
 import { DocumentDto } from './dto/response/document.dto';
-import { OpenAiService } from '../openai/open-ai.service';
 
 @Injectable()
 export class DocumentService {
@@ -118,11 +122,11 @@ export class DocumentService {
       docId: item.doc_id,
       title: item.title,
       type: item.type,
-      url: item.url,
-      content: item.content,
-      summary: item.summary,
+      url: rewriteLegacyRemakUrl(item.url),
+      content: rewriteLegacyRemakUrlsInText(item.content),
+      summary: rewriteLegacyRemakUrlsInText(item.summary),
       status: item.status,
-      thumbnailUrl: item.thumbnail_url,
+      thumbnailUrl: rewriteLegacyRemakUrl(item.thumbnail_url),
       createdAt: item.created_at,
       updatedAt: item.updated_at,
       tags: item.tags,

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Role, User } from '@prisma/client';
+import { rewriteLegacyRemakUrl } from '../../../common/remak-domain';
 
 export class UserDto {
   @ApiProperty({
@@ -29,7 +30,7 @@ export class UserDto {
   constructor(user: User) {
     this.name = user.name;
     this.email = user.email;
-    this.imageUrl = user.imageUrl;
+    this.imageUrl = rewriteLegacyRemakUrl(user.imageUrl);
     this.role = user.role;
   }
 }

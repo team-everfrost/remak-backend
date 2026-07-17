@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Document, DocumentType, Status, Tag } from '@prisma/client';
+import {
+  rewriteLegacyRemakUrl,
+  rewriteLegacyRemakUrlsInText,
+} from '../../../common/remak-domain';
 
 export class DocumentDto {
   @ApiProperty({
@@ -72,11 +76,11 @@ export class DocumentDto {
     this.docId = document.docId;
     this.title = document.title;
     this.type = document.type;
-    this.url = document.url;
-    this.content = document.content;
-    this.summary = document.summary;
+    this.url = rewriteLegacyRemakUrl(document.url);
+    this.content = rewriteLegacyRemakUrlsInText(document.content);
+    this.summary = rewriteLegacyRemakUrlsInText(document.summary);
     this.status = document.status;
-    this.thumbnailUrl = document.thumbnailUrl;
+    this.thumbnailUrl = rewriteLegacyRemakUrl(document.thumbnailUrl);
     this.createdAt = document.createdAt;
     this.updatedAt = document.updatedAt;
     this.tags = document.tags.map((tag) => tag.name);
